@@ -762,7 +762,7 @@ load_css()
 
 # LOAD JSON DATA
 try:
-    with open('trend_analysis_men-tshirts.json', 'r', encoding='utf-8') as f:
+    with open('enhanced_trend_analysis_men-tshirts.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
 except FileNotFoundError:
     st.error("Data file not found. Please ensure 'trend_analysis_men-tshirts.json' is in the correct directory.")
@@ -781,7 +781,8 @@ for group in category_rankings.values():
 all_products.extend(overall_ranking.to_dict(orient="records"))
 
 
-# ENHANCED PRODUCT DETAIL PAGE - STREAMLIT NATIVE STYLING
+# ENHANCED PROFESSIONAL PRODUCT DETAIL PAGE - ECOMMERCE STYLE
+# CLEAN PROFESSIONAL PRODUCT DETAIL PAGE
 def show_product_detail(product_id):
     # Find the product by ID
     product = None
@@ -794,7 +795,7 @@ def show_product_detail(product_id):
         st.error("Product not found")
         return
 
-    # Load minimal CSS for back button and title section only
+    # Minimal, clean CSS
     st.markdown("""
     <style>
     .back-button {
@@ -871,14 +872,14 @@ def show_product_detail(product_id):
     if product['original_price'] > 0:
         discount = round((product['original_price'] - product['current_price']) / product['original_price'] * 100, 1)
 
-    # Back button (keep original styling)
+    # Back button (keeping original)
     st.markdown("""
     <a href="?" class="back-button">
         ← Back to Products
     </a>
     """, unsafe_allow_html=True)
 
-    # Header Section (keep original styling)
+    # Header Section (keeping original)
     st.markdown(f"""
     <div class="detail-header-section">
         <div class="detail-breadcrumb">
@@ -893,100 +894,110 @@ def show_product_detail(product_id):
     </div>
     """, unsafe_allow_html=True)
 
-    # Main content using Streamlit columns
-    col1, col2 = st.columns([1, 2])
+    # Main layout - cleaner approach
+    left_col, right_col = st.columns([1, 1.5])
 
-    # LEFT SIDE - IMAGE
-    with col1:
-        st.image(product['img_link'], caption=product['title'], use_column_width=True)
+    # LEFT COLUMN - Image and Buy Button
+    with left_col:
+        st.image(product['img_link'], use_column_width=True)
 
-        # Action buttons below image
-        st.link_button("🛒 Buy Now", product['product_link'], use_container_width=True)
-        st.link_button("🖼️ View Full Size", product['img_link'], use_container_width=True)
+        st.markdown("---")
 
-    # RIGHT SIDE - PRODUCT INFORMATION
-    with col2:
+        # Primary buy button
+        st.link_button(
+            f"🛒 Buy on {product['platform']}",
+            product['product_link'],
+            use_container_width=True,
+            type="primary"
+        )
+
+        # Stock status
+        st.success("✅ In Stock")
+
+    # RIGHT COLUMN - Product Info
+    with right_col:
         # Price section
-        st.subheader("💰 Price")
-        price_col1, price_col2 = st.columns([1, 1])
+        st.markdown("### 💰 Price")
 
-        with price_col1:
-            st.metric("Current Price", f"₹{product['current_price']:,}")
+        if discount > 0:
+            price_col1, price_col2 = st.columns(2)
+            with price_col1:
+                st.metric("Current Price", f"₹{product['current_price']:,}")
+            with price_col2:
+                st.metric("You Save", f"₹{product['original_price'] - product['current_price']:,}",
+                          f"{discount}% OFF")
+        else:
+            st.metric("Price", f"₹{product['current_price']:,}")
 
-        with price_col2:
-            if discount > 0:
-                st.metric("Discount", f"{discount}% OFF",
-                          f"Save ₹{product['original_price'] - product['current_price']:,}")
-            else:
-                st.metric("Original Price", f"₹{product['original_price']:,}")
+        st.markdown("---")
 
-        st.divider()
+        # Ratings
+        st.markdown("### ⭐ Ratings")
 
-        # Ratings and Reviews section
-        st.subheader("⭐ Ratings & Reviews")
-        rating_col1, rating_col2, rating_col3, rating_col4 = st.columns(4)
+        rating_col1, rating_col2, rating_col3 = st.columns(3)
 
         with rating_col1:
             st.metric("Rating", f"{product['rating_outof5']}/5")
 
         with rating_col2:
-            st.metric("Ratings Count", number_Str(product['ratings_count']))
+            st.metric("Ratings", number_Str(product['ratings_count']))
 
         with rating_col3:
-            st.metric("Reviews Count", number_Str(product['reviews_count']))
+            st.metric("Reviews", number_Str(product['reviews_count']))
 
-        with rating_col4:
-            composite_score = round(product.get('composite_score', 0), 1)
-            st.metric("Composite Score", composite_score)
+        st.markdown("---")
 
-        st.divider()
+        # Product details
+        st.markdown("### 📋 Details")
 
-        # Product Details
-        st.subheader("📋 Product Details")
+        st.write(f"**Brand:** {product['brand']}")
+        st.write(f"**Platform:** {product['platform']}")
+        st.write(f"**Product ID:** {product['product_id']}")
 
-        detail_col1, detail_col2 = st.columns(2)
+        if 'main_category' in product:
+            st.write(f"**Category:** {product['main_category']}")
 
-        with detail_col1:
-            st.write(f"**Brand:** {product['brand']}")
-            st.write(f"**Platform:** {product['platform']}")
-            st.write(f"**Product ID:** {product['product_id']}")
+    # Full width sections below
+    st.markdown("---")
 
-        with detail_col2:
-            if 'main_category' in product:
-                st.write(f"**Main Category:** {product['main_category']}")
-            if 'sub_category' in product:
-                st.write(f"**Sub Category:** {product['sub_category']}")
-
-        # Category Rankings (within Product Details)
-        if 'other_category_ranks' in product and product['other_category_ranks']:
-            other_ranks = product['other_category_ranks']
-            if isinstance(other_ranks, dict) and len(other_ranks) > 0:
-                valid_ranks = {}
-                for cat, rank in other_ranks.items():
-                    if cat and rank and str(rank).strip():
-                        try:
-                            rank_num = int(float(rank))
-                            valid_ranks[cat] = rank_num
-                        except (ValueError, TypeError):
-                            continue
-
-                if valid_ranks:
-                    st.write("**Category Rankings:**")
-                    rankings_text = " | ".join([f"#{rank} in {cat}" for cat, rank in valid_ranks.items()])
-                    st.write(rankings_text)
-
-    # Product Attributes Section (simple text with separators)
+    # Product Attributes
     if 'attribute_tokenset' in product and product['attribute_tokenset']:
         attributes = product['attribute_tokenset']
         if isinstance(attributes, list) and len(attributes) > 0:
             valid_attributes = [attr for attr in attributes if attr and str(attr).strip()]
 
             if valid_attributes:
-                st.subheader("🏷️ Product Attributes")
-                attributes_text = " | ".join(valid_attributes)
-                st.write(attributes_text)
+                st.markdown("### 🏷️ Product Features")
 
-    # Reviews Section (using Streamlit)
+                # Display attributes in a clean way
+                for i in range(0, len(valid_attributes), 4):
+                    attr_cols = st.columns(4)
+                    for j, attr in enumerate(valid_attributes[i:i + 4]):
+                        with attr_cols[j]:
+                            st.info(attr)
+
+    # Category Rankings
+    if 'other_category_ranks' in product and product['other_category_ranks']:
+        other_ranks = product['other_category_ranks']
+        if isinstance(other_ranks, dict) and len(other_ranks) > 0:
+            valid_ranks = {}
+            for cat, rank in other_ranks.items():
+                if cat and rank and str(rank).strip():
+                    try:
+                        rank_num = int(float(rank))
+                        valid_ranks[cat] = rank_num
+                    except (ValueError, TypeError):
+                        continue
+
+            if valid_ranks:
+                st.markdown("### 📈 Category Rankings")
+
+                rank_cols = st.columns(min(len(valid_ranks), 3))
+                for i, (cat, rank) in enumerate(valid_ranks.items()):
+                    with rank_cols[i % 3]:
+                        st.metric(cat, f"#{rank}")
+
+    # Reviews Section
     reviews = []
     for i in range(1, 10):
         review_key = f'reviews_detail.{i}'
@@ -996,34 +1007,35 @@ def show_product_detail(product_id):
                 reviews.append(review)
 
     if reviews:
-        st.subheader(f"💬 Customer Reviews ({len(reviews)})")
+        st.markdown("### 💬 Customer Reviews")
 
-        # Create tabs for reviews if there are many
+        # Show first 3 reviews in expandable format
+        for i, review in enumerate(reviews[:3]):
+            with st.expander(f"Review {i + 1}"):
+                st.write(review)
+
         if len(reviews) > 3:
-            review_tabs = st.tabs([f"Review {i + 1}" for i in range(min(len(reviews), 5))])
-            for i, tab in enumerate(review_tabs):
-                with tab:
-                    if i < len(reviews):
-                        st.write(f"📝 {reviews[i]}")
-        else:
-            # Display all reviews if few
-            for i, review in enumerate(reviews):
-                with st.expander(f"Review {i + 1}"):
-                    st.write(review)
+            st.info(f"+ {len(reviews) - 3} more reviews available")
 
-    # Final action section
-    st.divider()
-    st.subheader("🛒 Purchase Options")
+    # Final purchase section
+    st.markdown("---")
 
-    action_col1, action_col2 = st.columns(2)
+    final_col1, final_col2 = st.columns([2, 1])
 
-    with action_col1:
-        st.link_button(f"🛒 Buy on {product['platform']}", product['product_link'],
-                       use_container_width=True, type="primary")
+    with final_col1:
+        st.link_button(
+            f"🛒 Buy Now on {product['platform']}",
+            product['product_link'],
+            use_container_width=True,
+            type="primary"
+        )
 
-    with action_col2:
-        st.link_button("🖼️ View Product Image", product['img_link'],
-                       use_container_width=True)
+    with final_col2:
+        st.link_button(
+            "🖼️ View Image",
+            product['img_link'],
+            use_container_width=True
+        )
 
 # Check if we should show product detail page
 if 'product_id' in st.query_params:
@@ -1222,7 +1234,7 @@ if page == "Trend Analysis":
     for group in category_rankings.values():
         for product in group:
             price = safe_numeric(product.get('current_price'))
-            score = safe_numeric(product.get('composite_score'))
+            score = safe_numeric(product.get('composite_score_norm'))
             rating = safe_numeric(product.get('rating_outof5'))
             reviews = safe_numeric(product.get('reviews_count'))
 
@@ -1294,7 +1306,7 @@ if page == "Trend Analysis":
     for group in category_rankings.values():
         for product in group:
             attributes = product.get("attribute_tokenset", [])
-            score = safe_numeric(product.get('composite_score'))
+            score = safe_numeric(product.get('composite_score_norm'))
             rating = safe_numeric(product.get('rating_outof5'))
             reviews = safe_numeric(product.get('reviews_count'))
 
@@ -1398,7 +1410,7 @@ if page == "Trend Analysis":
     for group in category_rankings.values():
         for product in group:
             attributes = [str(attr).lower() for attr in product.get("attribute_tokenset", []) if attr]
-            score = safe_numeric(product.get('composite_score'))
+            score = safe_numeric(product.get('composite_score_norm'))
             rating = safe_numeric(product.get('rating_outof5'))
             price = safe_numeric(product.get('current_price'))
 
@@ -1660,7 +1672,7 @@ def display_products(filtered_data, section_title):
                             <span class="original-price">₹{product['original_price']}</span>
                         </div>
                         <div class="score-badge">
-                            Score: {round(product.get('composite_score', 0), 2)}
+                            Score: {round(product.get('composite_score_norm', 0), 2)}
                         </div>
                         <div class="rank-info">
                             Platform Rank: #{product['sorting_rank']} in {product.get('sorting', 'N/A')}
