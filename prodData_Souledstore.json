@@ -1,0 +1,344 @@
+{
+  "men-shirts": {
+    "Recommended": [
+      {
+        "product_id": "TSS_CotLinPeaWhi",
+        "sorting_rank": 1,
+        "sorting": "Recommended",
+        "title": "Cotton Linen: Pearl White",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1299,
+        "original_price": 1299,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/solids-pearl-white-men-cotton-linen-shirts?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "85% cotton 15% linen",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_PlaSpe",
+        "sorting_rank": 2,
+        "sorting": "Recommended",
+        "title": "Plaid: Spectrum",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1299,
+        "original_price": 1299,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/plaid-shirts-red-aura-men-shirts?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "100% cotton",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_CotLinStrSie",
+        "sorting_rank": 3,
+        "sorting": "Recommended",
+        "title": "Cotton Linen Stripes: Sienna",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1699,
+        "original_price": 1699,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/tss-originals-cannoli-cream-men-linen-shirts?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "85% cotton 15% linen",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_PlaBluGreandYel",
+        "sorting_rank": 4,
+        "sorting": "Recommended",
+        "title": "Plaid: Blue, Green, and Yellow",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 999,
+        "original_price": 1399,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/checks-blue-green-yellow-mens-utility-shirt?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "100% cotton",
+          "mild detergent wash",
+          "do not wring",
+          "medium steam iron"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_CotLinStrAzu",
+        "sorting_rank": 5,
+        "sorting": "Recommended",
+        "title": "Cotton Linen Stripes: Azure",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1699,
+        "original_price": 1699,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/cotton-linen-shirts-blue-steel-men?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "85% cotton 15% linen",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      }
+    ],
+    "Popularity": [
+      {
+        "product_id": "TSS_CotLinPeaWhi",
+        "sorting_rank": 1,
+        "sorting": "Popularity",
+        "title": "Cotton Linen: Pearl White",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1299,
+        "original_price": 1299,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/solids-pearl-white-men-cotton-linen-shirts?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "85% cotton 15% linen",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_PlaSpe",
+        "sorting_rank": 2,
+        "sorting": "Popularity",
+        "title": "Plaid: Spectrum",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1299,
+        "original_price": 1299,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/plaid-shirts-red-aura-men-shirts?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "100% cotton",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_CotLinStrSie",
+        "sorting_rank": 3,
+        "sorting": "Popularity",
+        "title": "Cotton Linen Stripes: Sienna",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1699,
+        "original_price": 1699,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/tss-originals-cannoli-cream-men-linen-shirts?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "85% cotton 15% linen",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_PlaBluGreandYel",
+        "sorting_rank": 4,
+        "sorting": "Popularity",
+        "title": "Plaid: Blue, Green, and Yellow",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 999,
+        "original_price": 1399,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/checks-blue-green-yellow-mens-utility-shirt?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "100% cotton",
+          "mild detergent wash",
+          "do not wring",
+          "medium steam iron"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_CotLinStrAzu",
+        "sorting_rank": 5,
+        "sorting": "Popularity",
+        "title": "Cotton Linen Stripes: Azure",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1699,
+        "original_price": 1699,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/cotton-linen-shirts-blue-steel-men?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "85% cotton 15% linen",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      }
+    ],
+    "Freshness": [
+      {
+        "product_id": "TSS_CotLinStrAzu",
+        "sorting_rank": 1,
+        "sorting": "Freshness",
+        "title": "Cotton Linen Stripes: Azure",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1699,
+        "original_price": 1699,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/cotton-linen-shirts-blue-steel-men?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "85% cotton 15% linen",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_CotLinStrSie",
+        "sorting_rank": 2,
+        "sorting": "Freshness",
+        "title": "Cotton Linen Stripes: Sienna",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1699,
+        "original_price": 1699,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/tss-originals-cannoli-cream-men-linen-shirts?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "85% cotton 15% linen",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_SquGamMin",
+        "sorting_rank": 3,
+        "sorting": "Freshness",
+        "title": "Squid Game: Mingle",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1199,
+        "original_price": 1199,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/squid-game-mingle-men-holiday-shirts?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "100% cotton",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_CorShaNav",
+        "sorting_rank": 4,
+        "sorting": "Freshness",
+        "title": "Corduroy Shacket: Navy",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1799,
+        "original_price": 1799,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/solids-rich-navy-men-shacket?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "100% polyester",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      },
+      {
+        "product_id": "TSS_CorShaMar",
+        "sorting_rank": 5,
+        "sorting": "Freshness",
+        "title": "Corduroy Shacket: Maroon",
+        "brand": "TSS",
+        "rating_outof5": null,
+        "ratings_count": null,
+        "current_price": 1799,
+        "original_price": 1799,
+        "img_link": null,
+        "product_link": "https://www.thesouledstore.com/product/solids-deep-maroon-men-shacket?gte=1",
+        "reviews_count": null,
+        "reviews_detail": {},
+        "attributes": [
+          "material & care:",
+          "100% polyester",
+          "machine wash"
+        ],
+        "category": "men-shirts",
+        "platform": "TSS"
+      }
+    ]
+  }
+}
