@@ -1,21 +1,17 @@
 # SCRAPPING THE SOULED STORE FOR RAW CULT TREND ANALYSIS AND FORECASTING PROJECT !!
-# - SHIVAM RAJPUT # COMPLETED 90%
-''' RATING, RATING NO. , REVIEWS ,  NO. REVIEWS NOT AVAILABLE '''
+
+''' RATING, RATING NO. , REVIEWS ,  NO. REVIEWS NOT AVAILABLE ''' #TODO: ATTRIBUTES ERROR
 
 # ALL IMPORT IMPORTS
-import time, json
+import time, json, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from runBot_TA import *
 
 # THE SUB CATOGORIES OF MYNTRA YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-shirts': 'https://www.thesouledstore.com/men/shirts',
-}
-
-# EDITABLE CONSTANTS
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+URL_DICT = TO_SCRAPE_URL_DICT['TheSouledStore']
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['TheSouledStore']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1.5 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -96,7 +92,7 @@ for SUB_CATEGORY in URL_DICT:
             driver.get(product)
 
             # BRAND *
-            brand = 'TSS'
+            brand = 'TheSouledStore'
 
             # TITLE *
             try:
@@ -126,34 +122,23 @@ for SUB_CATEGORY in URL_DICT:
             # RATING & RATING DETAILS AND REVIEWS ALL ARE NOT AVAILABLE IN MOST OF THE PRODUCTS IN SOULED STORE
             rating, ratings_count, reviews_count, revwDict = None, None, None, {}
 
-            driver.execute_script(f"window.scrollTo(0, 300);")
+            driver.execute_script(f"window.scrollTo(0, 600);")
             time.sleep(0.25)
 
             try:
                 driver.find_element(By.ID, 'headingOne').click()
             except:
-                print('descrption error in ' + product)
+                pass
 
             # PRODUCT DETAILS VALUES - ATTRIBUTES
             attributes = []
             try:
-                info = driver.find_element(By.ID, 'collapseOne').text.split('\n')
-                attributes = info
-                for k, line in enumerate(info):
-                    if 'Country of Origin' in line:
-                        attributes = attributes[0:k]
+                info = driver.find_element(By.ID, 'collapseOne').text
+                attributes = info.split('\n\n')[0].replace('\n', ' ').split(' ')
+                print(attributes)
             except:
                 attributes = []
                 print(f'Attributes error in: {product}')
-
-            # ATTRIBUTE FORMATTING
-            attributes = [
-                [word for word in line.lower().strip().split() if word not in details_crap]
-                for line in attributes if line.strip()
-            ]
-            attributes = [attr for attr in attributes if attr]
-            attributes = [" ".join(attr) for attr in attributes]
-
 
             sample.append({
                 'product_id': make_id(title, brand),
@@ -171,9 +156,10 @@ for SUB_CATEGORY in URL_DICT:
                 'reviews_detail': revwDict,
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
-                'platform': 'TSS'
-            }
-            )
+                'platform': 'TheSouledStore',
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M")
+
+            })
 
             index += 1
 

@@ -1,14 +1,6 @@
 '''DATA SCRAPPING BOT [AJIO] FOR RAWCULT TREND-ANALYSIS
 ~ SHIVAM RAJPUT [NOTE- WRITTEN REVIEWS ARE NOT THERE IN AJIO]'''
 
-#TODO: MIGHT HAVE TO INCLUDE CLICKING THE CATEGORY BUTTON ON AJIO FOR DIFFERENT LATEST PRODUCTS
-
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://www.ajio.com/men-tshirts/c/830216014',
-    # 'men-shirts': 'https://www.ajio.com/men-shirts'
-}
-
 # SORTINGS DICTIONARY ACCORDING TO THE SOURCE URL
 sort_dict = {
     'Recommended': 'relevance',
@@ -18,7 +10,8 @@ sort_dict = {
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['Ajio']
+URL_DICT = TO_SCRAPE_URL_DICT['Ajio']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1.5 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -47,75 +40,24 @@ prefs = {"profile.default_content_settings.popups": 0,
          "directory_upgrade": True,
          "safebrowsing.enabled": False}
 
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://www.ajio.com/"
+}
+
 # SETTING UP CHROME OPTIONS AND THE KEY PARAMETERS
-options = webdriver.ChromeOptions()
+import undetected_chromedriver as uc
+
+options = uc.ChromeOptions()
 options.add_argument('--ignore-ssl-errors=yes')
 options.add_argument('--ignore-certificate-errors')
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36")
-
-if True: # PREVENTS DETECTION OF AUTOMATION! ALL THREE ARE NECESSARY FOR BYPASSING BOT DETECTION
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_experimental_option('useAutomationExtension', False)
-    options.add_experimental_option("prefs", prefs)
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--ignore-ssl-errors=yes')
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument("--disable-blink-features=DisableBrownMouth")
-    options.add_argument("--disable-web-plank")
-    options.add_argument("--disable-web-plank-sandbox")
-    options.add_argument("--disable-web-plank-feature")
-
-if HEADLESS_BROWSER: # ENABLES SPEED BOOST WHEN USING HEADLESS MODE
-    options.add_argument('--disable-gpu')
-    options.add_argument('--headless=new')
-
-if True: # INCREASES SCRAPING SPEED BY DISABLING THE UI
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-infobars')
-
-if True: # REQUIRED ONLY FOR ENVIRONMENTS WITH LOWER MEMORY (E.G., DOCKER)
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--no-sandbox')
-
-if True: # MAY IMPROVE PERFORMANCE FOR CROSS-ORIGIN RESOURCE SHARING BUT CAN POSE SECURITY RISKS
-    options.add_argument('--disable-web-security')
-
-if True: # DISABLES IMAGE LOADING FOR FASTER PAGE RENDERING
-    prefs["profile.managed_default_content_settings.images"] = 2
-    options.add_experimental_option("prefs", prefs)
-
-if True: # SETS UP FIXED WINDOW SIZE TO PREVENT VIEWPORT ERRORS
-    options.add_argument("window-size=1920,1080")
-
-if True: # DISABLES UNNECESSARY LOGGING PROCESSES
-    options.add_argument('--log-level=3')
-    options.add_argument('--silent')
-
-if True: # INCREASES SIMULTANEOUS CONNECTIONS FOR FASTER LOADING
-    options.add_argument('--max-connections-per-host=100')
-
-if True: # DISABLES CACHING TO AVOID USING OLD DATA
-    options.add_argument('--disk-cache-size=0')
-    options.add_argument('--disable-cache')
-    options.add_argument('--disable-application-cache')
-    options.add_argument('--disable-background-timer-throttling')
-    options.add_argument('--disable-background-networking')
-    options.add_argument('--disable-renderer-backgrounding')
-    options.add_argument('--disable-backgrounding-occluded-windows')
-    options.add_argument('--disable-site-isolation-trials')
-    options.add_argument('--metrics-recording-only')
-    options.add_argument('--no-default-browser-check')
-    options.add_argument('--disable-setuid-sandbox')
-    options.add_argument('--no-first-run')
-    options.add_argument('--homepage=about:blank')
-    options.add_argument('--disable-hang-monitor')
-    options.add_argument('--disable-prompt-on-repost')
-    options.add_argument('--disable-sync')
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 # SETTING UP CHROME DRIVER FOR CHROME SCRAPPING
-driver = webdriver.Chrome(options=options)
+driver = uc.Chrome(options=options)
 driver.implicitly_wait(IMPLICIT_WAIT)
 
 # MAIN URL LOOP FOR THE SCRAPPER !
@@ -292,7 +234,7 @@ for SUB_CATEGORY in URL_DICT:
 
 # MAKING THE JSON FILE FO THE FINAL DATA
 with open(f'prodData_Ajio.json', 'w', encoding="utf-8") as fl:
-    fl.write(json.dumps(FINALDATA, indent=2, ensure_ascii=False))
+    fl.write(json.dumps(FINALDATA, indent=1, ensure_ascii=False))
 
 driver.quit()
 tm_end = time.time()

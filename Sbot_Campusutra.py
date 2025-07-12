@@ -1,11 +1,6 @@
 '''DATA SCRAPPING BOT [CAMPUS SUTRA] FOR RAWCULT TREND-ANALYSIS
 ~ SHIVAM RAJPUT '''
 
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://campussutra.com/collections/polos?sort_by=manual',
-}
-
 # SORTING DICTIONAY ACCORDING TO THE SOURCE URL
 sort_dict = {
     'Recommended': 'manual',
@@ -15,7 +10,8 @@ sort_dict = {
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['CampusSutra']
+URL_DICT = TO_SCRAPE_URL_DICT['CampusSutra']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1.5 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -23,7 +19,7 @@ IMPLICIT_WAIT = 0.5
 #-------------------------------------------------------------------------------------------------------------
 
 # ALL IMPORTANTS IMPORTS
-import time, json, ssl
+import time, json, ssl, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -171,11 +167,7 @@ for SUB_CATEGORY in URL_DICT:
                 continue
 
             # BRAND *
-            try:
-                brand = driver.find_element(By.CSS_SELECTOR, '.product-meta__title.heading.h3').text.split("-")[0]
-            except:
-                print(f'Brand Name error in: {product}')
-                continue
+            brand = 'Campus Sutra'
 
             # TITLE *
             try:
@@ -203,7 +195,7 @@ for SUB_CATEGORY in URL_DICT:
             # ORIGINAL PRICE
             try:
                 oprice = driver.find_element(By.CSS_SELECTOR, '.price.price--compare').text
-                if 'Rs.' in oprice: oprice = oprice.split('Rs.')[1].strip().split(' ')[0]
+                if '\n' in oprice: oprice = oprice.split('\n')[1].strip().replace('MRP.', '')
                 # EXTRACTING
                 oprice = oprice.replace('₹', '').replace(',', '')
                 if oprice.replace('.', '').isnumeric():
@@ -275,6 +267,8 @@ for SUB_CATEGORY in URL_DICT:
             attributes = [attr for attr in attributes if attr]
             attributes = [" ".join(attr) for attr in attributes]
 
+            print(f"{index} !! {original_price} {ratings_count} {reviews_count} {rating} {reviews_count}")
+
             sample.append({
                 'product_id': make_id(title, brand),
                 'sorting_rank': index,
@@ -291,8 +285,9 @@ for SUB_CATEGORY in URL_DICT:
                 'reviews_detail': revwDict,
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
-                'platform': 'CampusSutra'
-                }
+                'platform': 'CampusSutra',
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M")
+            }
             )
 
             index += 1

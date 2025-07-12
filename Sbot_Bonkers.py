@@ -1,10 +1,5 @@
 '''DATA SCRAPPING BOT [BONKERS CORNER] FOR RAWCULT TREND-ANALYSIS
-~ SHIVAM RAJPUT [NOTE- WRITTEN REVIEWS ARE NOT THERE IN AJIO]'''
-
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-shirts': 'https://www.bonkerscorner.com/collections/oversized-t-shirt-men?sort_by=',
-}
+~ SHIVAM RAJPUT'''
 
 # SORTINGS DICTIONARY ACCORDING TO THE SOURCE URL
 sort_dict = {
@@ -15,7 +10,8 @@ sort_dict = {
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['Bonkers']
+URL_DICT = TO_SCRAPE_URL_DICT['Bonkers']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1.5 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -23,7 +19,7 @@ IMPLICIT_WAIT = 0.5
 #-------------------------------------------------------------------------------------------------------------
 
 # ALL IMPORT IMPORTS
-import time, json, ssl
+import time, json, ssl, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -123,7 +119,7 @@ for SUB_CATEGORY in URL_DICT:
     for sort_type in sort_dict.keys():
 
         # ACCORDING TO THE SORTING , GOING TO THE WEBSITE PAGE TO SCRAPE
-        driver.get(URL_DICT[SUB_CATEGORY] + sort_dict[sort_type])
+        driver.get(URL_DICT[SUB_CATEGORY] + '?sort_by=' + sort_dict[sort_type])
 
         # SETTING UP LOOP VARIABLE TO THE INITAL VALUES
         FINALDATA[SUB_CATEGORY][sort_type] = []
@@ -157,7 +153,6 @@ for SUB_CATEGORY in URL_DICT:
 
         # NOW SCRAPPING EACH PRODUCT
         index = 1
-        print(productList)
         for product in productList:
 
             driver.get(product)
@@ -181,49 +176,66 @@ for SUB_CATEGORY in URL_DICT:
 
             # CURRENT PRICE *
             try:
-                price = driver.find_element(By.CSS_SELECTOR, '.amount').text.split(' ')
-                print(price)
-                # price = price.replace('Rs.', '').replace('MRP', '').replace(',', '').strip()
-                # if price.replace('.', '').isnumeric():
-                #     price = round(float(price),2)
-                # else:
-                #     price = price
+                price_box = driver.find_element(By.CSS_SELECTOR, '.product-price-container').text.split('\n')
+
+                if 'Rs.' in price_box[1]: price = price_box[1].replace('Rs.', '')
+                else: price = price_box[0].replace('Rs.', '')
+
+                if price.replace('.', '').isnumeric():
+                    price = int(float(price))
+                else:
+                    price = price
             except:
                 print(f'Price error in: {product}')
                 continue
 
             # ORIGINAL PRICE:
-            # try:
-            #     original_price =
+            try:
+                price_box = driver.find_element(By.CSS_SELECTOR, '.product-price-container').text.split('\n')
 
-            # RATING & RATING DETAILS AND REVIEWS ALL ARE NOT AVAILABLE IN MOST OF THE PRODUCTS IN SOULED STORE
-            rating, ratings_count, reviews_count, revwDict = None, None, None, {}
+                if 'Rs.' in price_box[0]:
+                    oprice = price_box[1].replace('Rs.', '')
 
-            driver.execute_script(f"window.scrollTo(0, 300);")
-            time.sleep(0.25)
+                if oprice.replace('.', '').isnumeric():
+                    oprice = int(float(oprice))
+                else:
+                    oprice = oprice
+            except:
+                oprice = price
 
-            # try:
-            #     driver.find_element(By.ID, 'headingOne').click()
-            # except:
-            #     print('descrption error in ' + product)
+            driver.execute_script(f"window.scrollTo(0, 1500);")
+            time.sleep(0.5)
 
             # PRODUCT DETAILS VALUES - ATTRIBUTES
             attributes = []
             try:
-                info = driver.find_element(By.CLASS_NAME, '.collapsible__content.accordion__content.rte').text.split('\n')
-                attributes = info
+                info = driver.find_element(By.CSS_SELECTOR, '.collapsible__content.accordion__content.rte')
+                try:
+                    attributes = info.find_element(By.CSS_SELECTOR, '.p-rich_text_section').text.replace('\n', ' ').split(' ')
+                except:
+                    try:
+                        attributes = info.find_element(By.TAG_NAME, 'p').text.replace('\n', ' ').split(' ')
+                    except:
+                        try:
+                            attributes = info.find_element(By.XPATH, '/p[1]').text.replace('\n', ' ').split(' ')
+                        except:
+                            atributes = info.text.replace('\n', ' ').split(' ')
+
             except:
                 attributes = []
                 print(f'Attributes error in: {product}')
 
-            # ATTRIBUTE FORMATTING
-            attributes = [
-                [word for word in line.lower().strip().split()]
-                for line in attributes if line.strip()
-            ]
-            attributes = [attr for attr in attributes if attr]
-            attributes = [" ".join(attr) for attr in attributes]
-
+            try:
+                revwdata = driver.find_element(By.CSS_SELECTOR, '.jdgm-rev-widg__summary-inner').text
+                if 'first' in revwdata.lower():
+                    rating, ratings_count, reviews_count, revwDict = None, None, None, {}
+                else:
+                    rating = float(revwdata.split('\n')[0].split(' ')[0])
+                    ratings_count = int(revwdata.split('\n')[1].split(' ')[2])
+                    reviews_count = ratings_count
+                    revwDict = {}
+            except:
+                rating, ratings_count, reviews_count, revwDict = None, None, None, {}
 
             sample.append({
                 'product_id': make_id(title, brand),
@@ -241,9 +253,9 @@ for SUB_CATEGORY in URL_DICT:
                 'reviews_detail': revwDict,
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
-                'platform': 'Bonkers'
-            }
-            )
+                'platform': 'Bonkers',
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M")
+            })
 
             index += 1
 

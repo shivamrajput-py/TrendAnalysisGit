@@ -1,11 +1,6 @@
 ''' DATA SCRAPPING BOT [BEWAKOOF] FOR RAWCULT TREND-ANALYSIS
 ~ SHIVAM RAJPUT '''
 
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://www.bewakoof.com/men-t-shirts',
-}
-
 # SORTINGS DICTIONARY ACCORDING TO THE SOURCE URL
 sort_dict = {
     'Popularity': '',
@@ -14,9 +9,10 @@ sort_dict = {
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['Bewakoof']
+URL_DICT = TO_SCRAPE_URL_DICT['Bewakoof']
 HEADLESS_BROWSER = False
-scroll_pause_time = 1.5 # According to your Internet Speed
+scroll_pause_time = 1.85 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
 
 #-------------------------------------------------------------------------------------------------------------
@@ -24,11 +20,12 @@ IMPLICIT_WAIT = 0.5
 # ALL IMPORTANTS IMPORTS
 import time, json, ssl
 tm_start = time.time()
+import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 # CONSTANTS
-scroll_height_step = 1000
+scroll_height_step = 1200
 FINALDATA = {}
 scroll_count = int(MAX_PRODUCT_FROM_EACH_CATEGORY / 6) + 1  # Set the maximum number of scrolls
 
@@ -211,8 +208,26 @@ for SUB_CATEGORY in URL_DICT:
             except:
                 original_price = price
 
+            # WRITTEN REVIEWS COUNTINGS
+            try:
+                reviews_count = driver.find_element(By.CSS_SELECTOR,
+                                                    'div[data-testid="pdp-product-rating"]').text.split('\n')
+                if len(reviews_count) == 3:
+                    reviews_count = int(convert_to_number(reviews_count[2].replace('Reviews', '')))
+                else:
+                    reviews_count = None
+
+            except:
+                reviews_count = None
+
             driver.execute_script(f"window.scrollTo(0, 1000);")
             time.sleep(IMPLICIT_WAIT+0.8)
+
+            try:
+                driver.find_element(By.CSS_SELECTOR, 'button[data-testid="pdp-product-review-tab"]').click()
+                time.sleep(0.35)
+            except:
+                pass
 
             # RATINGS NUMBER
             try:
@@ -268,20 +283,14 @@ for SUB_CATEGORY in URL_DICT:
             attributes = [attr for attr in attributes if attr]
             attributes = [" ".join(attr) for attr in attributes]
 
-            # WRITTEN REVIEWS COUNTINGS
-            try:
-                reviews_count = driver.find_element(By.XPATH, '/html/body/div/main/main/div[1]/div[1]/section[2]/div[1]/div[2]/div[2]/div/span[3]').text
-                reviews_count = int(convert_to_number(reviews_count.replace('Reviews', '')))
-            except:
-                reviews_count = None
-
             # WRITTEN REVIEWS
             revwDict = {}
             # try:
-            #     for i, rev in enumerate(driver.find_elements(By.XPATH, '/html/body/div/main/main/div[1]/div[1]/section[2]/div[10]/div[2]/div/div[3]')):
-            #         revwDict[i+1] = rev.find_element(By.TAG_NAME, 'div/span').text.strip()
+            #     for i, rev in enumerate(driver.find_elements(By.CSS_SELECTOR, '.sc-52aa9520-0.fKrKsa')):
+            #         revwDict[i+1] = rev.text.strip()
             # except:
             #     revwDict = {}
+            print(ratings_count, rating)
 
             sample.append({
                 'product_id': make_id(title, brand),
@@ -299,20 +308,22 @@ for SUB_CATEGORY in URL_DICT:
                 'reviews_detail': revwDict,
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
-                'platform': 'Bewakoof'
+                'platform': 'Bewakoof',
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M"),
             })
 
             index += 1
 
         FINALDATA[SUB_CATEGORY][sort_type] = sample
 
-smpdt = FINALDATA[SUB_CATEGORY]['Popularity']
-for dt in smpdt: dt['sorting'] = 'Recommended'
-FINALDATA[SUB_CATEGORY]['Recommended'] = smpdt
+for SUB_CATEGORY in URL_DICT.keys():
+    smpdt = FINALDATA[SUB_CATEGORY]['Popularity']
+    for dt in smpdt: dt['sorting'] = 'Recommended'
+    FINALDATA[SUB_CATEGORY]['Recommended'] = smpdt
 
 # MAKING THE JSON FILE FO THE FINAL DATA
 with open(f'prodData_Bewakoof.json', 'w', encoding="utf-8") as fl:
-    fl.write(json.dumps(FINALDATA, indent=2, ensure_ascii=False))
+    fl.write(json.dumps(FINALDATA, indent=1, ensure_ascii=False))
 
 driver.quit()
 tm_end = time.time()

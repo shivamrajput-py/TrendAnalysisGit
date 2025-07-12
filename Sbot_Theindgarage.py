@@ -1,11 +1,6 @@
 '''DATA SCRAPPING BOT [THE INDIAN GARAGE] FOR RAWCULT TREND-ANALYSIS
 ~ SHIVAM RAJPUT '''
 
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://tigc.in/collections/shirt?type=men&sort_by=best-selling',
-}
-
 # SORTING DICTIONARY ACCORDING TO THE SOURCE LINK
 sort_dict = {
     'Recommended': 'best-selling',
@@ -14,7 +9,8 @@ sort_dict = {
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['TheIndianGarage']
+URL_DICT = TO_SCRAPE_URL_DICT['TheIndianGarage']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1.5 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -289,8 +285,10 @@ for SUB_CATEGORY in URL_DICT:
                 'reviews_detail': revwDict,
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
-                'platform': 'TheIndianGarage'
-                }
+                'platform': 'TheIndianGarage',
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M")
+
+            }
             )
 
             index += 1

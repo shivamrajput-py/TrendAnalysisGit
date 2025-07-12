@@ -1,12 +1,6 @@
 '''DATA SCRAPPING BOT [FLIPKART] FOR RAWCULT TREND-ANALYSIS
 ~ SHIVAM RAJPUT '''
 
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://www.flipkart.com/clothing-and-accessories/topwear/tshirt/men-tshirt/pr?sid=clo,ash,ank,edy&otracker=categorytree&otracker=nmenu_sub_Men_0_T-Shirts',
-    # 'men-jeans': 'https://www.flipkart.com/clothing-and-accessories/bottomwear/jeans/men-jeans/pr?sid=clo,vua,k58,i51&otracker=categorytree&otracker=nmenu_sub_Men_0_Jeans'
-}
-
 # SORTING DICTIONARY ACCORDING TO THE SOURCE URL
 sort_dict = {
     'Popularity' : 'popularity',
@@ -15,7 +9,8 @@ sort_dict = {
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['Flipkart']
+URL_DICT = TO_SCRAPE_URL_DICT['Flipkart']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1.5 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -23,7 +18,7 @@ IMPLICIT_WAIT = 0.5
 #-------------------------------------------------------------------------------------------------------------
 
 # ALL IMPORT IMPORTS
-import time, json, ssl
+import time, json, ssl, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -292,6 +287,8 @@ for SUB_CATEGORY in URL_DICT.keys():
             except:
                 revwDict = {}
 
+            print(f"{index} !! {price} {ratings_count} {reviews_count} ")
+
             sample.append({
                 'product_id': make_id(title, brand),
                 'sorting_rank': index,
@@ -309,16 +306,17 @@ for SUB_CATEGORY in URL_DICT.keys():
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
                 'platform': 'Flipkart',
-                }
-            )
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M")
+            })
 
             index+= 1
 
         FINALDATA[SUB_CATEGORY][sort_type] = sample
 
-smpdt = FINALDATA[SUB_CATEGORY]['Popularity']
-for dt in smpdt: dt['sorting'] = 'Recommended'
-FINALDATA[SUB_CATEGORY]['Recommended'] = smpdt
+for SUB_CATEGORY in URL_DICT.keys():
+    smpdt = FINALDATA[SUB_CATEGORY]['Popularity']
+    for dt in smpdt: dt['sorting'] = 'Recommended'
+    FINALDATA[SUB_CATEGORY]['Recommended'] = smpdt
 
 # MAKING THE JSON FILE FO THE FINAL DATA
 with open(f'prodData_Flipkart.json', 'w', encoding="utf-8") as fl:

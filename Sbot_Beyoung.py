@@ -1,10 +1,5 @@
 '''DATA SCRAPPING BOT [BEYOUNG] FOR RAWCULT TREND-ANALYSIS
-~ SHIVAM RAJPUT [NOTE- WRITTEN REVIEWS ARE NOT THERE IN AJIO]'''
-
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://www.beyoung.in/men-plain-t-shirts',
-}
+~ SHIVAM RAJPUT [NOTE- ]'''
 
 # SORTINGS DICTIONARY ACCORDING TO THE SOURCE URL
 sort_dict = {
@@ -15,21 +10,22 @@ sort_dict = {
 
 # IMPORTANT PARAMTERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['Beyoung']
+URL_DICT = TO_SCRAPE_URL_DICT['Beyoung']
 HEADLESS_BROWSER = False
-scroll_pause_time = 1.5 # According to your Internet Speed
+scroll_pause_time = 2 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
 
 #-------------------------------------------------------------------------------------------------------------
 
 # ALL IMPORTANTS IMPORTS
-import time, json, ssl
+import time, json, ssl, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 # CONSTANTS
-scroll_height_step = 1000
+scroll_height_step = 800
 FINALDATA = {}
 scroll_count = int(MAX_PRODUCT_FROM_EACH_CATEGORY / 6) + 1  # Set the maximum number of scrolls
 
@@ -268,7 +264,8 @@ for SUB_CATEGORY in URL_DICT:
                 'reviews_detail': revwDict,
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
-                'platform': 'Beyoung'
+                'platform': 'Beyoung',
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M"),
                 }
             )
 
@@ -279,7 +276,7 @@ for SUB_CATEGORY in URL_DICT:
 
 # MAKING THE JSON FILE FO THE FINAL DATA
 with open(f'prodData_Beyoung.json', 'w', encoding="utf-8") as fl:
-    fl.write(json.dumps(FINALDATA, indent=2, ensure_ascii=False))
+    fl.write(json.dumps(FINALDATA, indent=1, ensure_ascii=False))
 
 driver.quit()
 tm_end = time.time()

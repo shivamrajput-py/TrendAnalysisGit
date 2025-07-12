@@ -1,11 +1,6 @@
 '''DATA SCRAPPING BOT [BOMBAY SHIRT COMPANY] FOR RAWCULT TREND-ANALYSIS
 ~ SHIVAM RAJPUT '''
 
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://www.bombayshirts.com/collections/all-shirts?sort=best-selling',
-}
-
 # SORTING DICTIONARY ACCORDING TO THE SOURCE URL
 sort_dict = {
     'Recommended': '',
@@ -15,7 +10,8 @@ sort_dict = {
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['BombayShirtCompany']
+URL_DICT = TO_SCRAPE_URL_DICT['BombayShirtCompany']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1.5 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -23,7 +19,7 @@ IMPLICIT_WAIT = 0.5
 #-------------------------------------------------------------------------------------------------------------
 
 # ALL IMPORTANTS IMPORTS
-import time, json, ssl
+import time, json, ssl, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -215,6 +211,8 @@ for SUB_CATEGORY in URL_DICT:
                     rating = round(float(rating),1)
                 except:
                     rating = rating
+                    if rating == "":
+                        rating = None
 
             except:
                 rating = None
@@ -228,6 +226,8 @@ for SUB_CATEGORY in URL_DICT:
                 except:
                     ratings_count = convert_to_number(rating_info)
                     reviews_count = ratings_count
+                    if ratings_count == "": ratings_count, reviews_count = None, None
+
 
             except:
                 ratings_count = None
@@ -263,6 +263,8 @@ for SUB_CATEGORY in URL_DICT:
             attributes = [attr for attr in attributes if attr]
             attributes = [" ".join(attr) for attr in attributes]
 
+            print(f'{index}')
+
             sample.append({
                 'product_id': make_id(title, brand),
                 'sorting_rank': index,
@@ -279,7 +281,8 @@ for SUB_CATEGORY in URL_DICT:
                 'reviews_detail': revwDict,
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
-                'platform': 'BombayShirtCompany'
+                'platform': 'BombayShirtCompany',
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M")
                 }
             )
 
@@ -290,7 +293,7 @@ for SUB_CATEGORY in URL_DICT:
 
 # MAKING THE JSON FILE FO THE FINAL DATA
 with open(f'prodData_BombaySC.json', 'w', encoding="utf-8") as fl:
-    fl.write(json.dumps(FINALDATA, indent=2, ensure_ascii=False))
+    fl.write(json.dumps(FINALDATA, indent=1, ensure_ascii=False))
 
 driver.quit()
 tm_end = time.time()

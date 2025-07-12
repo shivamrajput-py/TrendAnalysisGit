@@ -728,8 +728,6 @@ def load_css():
         font-weight: 600;
         color: #4db8ff;
         margin: 0;
-        padding-bottom: 0.5rem;
-        border-bottom: 2px solid #4a4a4a;
         width: 100%;
     }
 
@@ -762,29 +760,53 @@ load_css()
 
 # LOAD JSON DATA
 try:
-    with open('enhanced_trend_analysis_men-tshirts.json', 'r', encoding='utf-8') as f:
+    with open('multi_category_trend_analysis_20250712_11.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
 except FileNotFoundError:
-    st.error("Data file not found. Please ensure 'trend_analysis_men-tshirts.json' is in the correct directory.")
+    st.error(
+        "Data file not found. Please ensure 'enhanced_trend_analysis_multi_category.json' is in the correct directory.")
     st.stop()
 
-available_categories = ['men-tshirts']
-
-# Extract data from JSON
-category_rankings = data["category_rankings"]
-overall_ranking = pd.DataFrame(data["overall_ranking"])
-
-# Combine all products for search
-all_products = []
-for group in category_rankings.values():
-    all_products.extend(group)
-all_products.extend(overall_ranking.to_dict(orient="records"))
+# Extract available categories from the new format
+if "results" in data:
+    available_categories = list(data["results"].keys())
+    processing_summary = data.get("processing_summary", {})
+else:
+    st.error("Invalid data format. Please check the JSON file structure.")
+    st.stop()
 
 
-# ENHANCED PROFESSIONAL PRODUCT DETAIL PAGE - ECOMMERCE STYLE
-# CLEAN PROFESSIONAL PRODUCT DETAIL PAGE
-def show_product_detail(product_id):
-    # Find the product by ID
+# Helper function to get category data
+def get_category_data(category_name):
+    """Extract category-specific data from the new format"""
+    if category_name in data["results"]:
+        category_data = data["results"][category_name]
+        return {
+            "category_rankings": category_data.get("category_rankings", {}),
+            "overall_ranking": pd.DataFrame(category_data.get("overall_ranking", [])),
+            "metadata": category_data.get("metadata", {})
+        }
+    return None
+
+
+# Combine all products for search (updated for multi-category)
+def get_all_products_for_category(category_name):
+    """Get all products for a specific category"""
+    category_info = get_category_data(category_name)
+    if not category_info:
+        return []
+
+    all_products = []
+    for group in category_info["category_rankings"].values():
+        all_products.extend(group)
+    all_products.extend(category_info["overall_ranking"].to_dict(orient="records"))
+    return all_products
+
+
+# ENHANCED PROFESSIONAL PRODUCT DETAIL PAGE - UPDATED FOR MULTI-CATEGORY
+def show_product_detail(product_id, category_name):
+    # Find the product by ID in the specific category
+    all_products = get_all_products_for_category(category_name)
     product = None
     for p in all_products:
         if p['product_id'] == product_id:
@@ -795,7 +817,7 @@ def show_product_detail(product_id):
         st.error("Product not found")
         return
 
-    # Minimal, clean CSS
+    # Minimal, clean CSS (keeping the existing styling)
     st.markdown("""
     <style>
     .back-button {
@@ -869,21 +891,23 @@ def show_product_detail(product_id):
 
     # Calculate discount
     discount = 0
-    if product['original_price'] > 0:
+    if product.get('original_price', 0) > 0:
         discount = round((product['original_price'] - product['current_price']) / product['original_price'] * 100, 1)
 
-    # Back button (keeping original)
-    st.markdown("""
-    <a href="?" class="back-button">
-        ← Back to Products
+    # Back button with category parameter
+    st.markdown(f"""
+    <a href="?category={category_name}" class="back-button">
+        ← Back to {category_name.replace('-', ' ').title()} Products
     </a>
     """, unsafe_allow_html=True)
 
-    # Header Section (keeping original)
+    # Header Section
     st.markdown(f"""
     <div class="detail-header-section">
         <div class="detail-breadcrumb">
             <a href="?" class="breadcrumb-link">Products</a>
+            <span>›</span>
+            <span>{category_name.replace('-', ' ').title()}</span>
             <span>›</span>
             <span>{product['brand']}</span>
             <span>›</span>
@@ -953,9 +977,10 @@ def show_product_detail(product_id):
         st.write(f"**Brand:** {product['brand']}")
         st.write(f"**Platform:** {product['platform']}")
         st.write(f"**Product ID:** {product['product_id']}")
+        st.write(f"**Category:** {category_name.replace('-', ' ').title()}")
 
         if 'main_category' in product:
-            st.write(f"**Category:** {product['main_category']}")
+            st.write(f"**Main Category:** {product['main_category']}")
 
     # Full width sections below
     st.markdown("---")
@@ -1037,56 +1062,60 @@ def show_product_detail(product_id):
             use_container_width=True
         )
 
+
 # Check if we should show product detail page
-if 'product_id' in st.query_params:
-    show_product_detail(st.query_params['product_id'])
+if 'product_id' in st.query_params and 'category' in st.query_params:
+    show_product_detail(st.query_params['product_id'], st.query_params['category'])
     st.stop()
 
 # MAIN APP CONTENT
-st.markdown("""
-<div class="main-header">
-    <h1>Rawcult Trend Analysis</h1>
-</div>
-""", unsafe_allow_html=True)
 
 # PAGE SELECTION
-page = st.sidebar.radio("Navigation", ["Products", "Trend Analysis"])
+page = st.sidebar.pills("", ["Products", "Trend Analysis"], label_visibility='hidden', default='Products')
 
 # SIDEBAR CONFIGURATION
 with st.sidebar:
     if page == "Products":
-        st.markdown("### 🎯 Category Selection")
+        st.sidebar.write('---')
+        st.markdown("### Category Selection")
         selected_category = st.selectbox(
             "Choose a Category:",
             available_categories,
-            index=0
+            index=0,
+            format_func=lambda x: x.replace('-', ' ').title()
         )
 
-        st.markdown("### 📊 Sort By")
-        sorting_options = list(category_rankings.keys()) + ["Overall Ranking"]
+        # Get category-specific data
+        category_info = get_category_data(selected_category)
+        if not category_info:
+            st.error(f"No data found for category: {selected_category}")
+            st.stop()
+
+        sorting_options =  ["Overall Ranking"] + list(category_info["category_rankings"].keys())
         sorting_group = st.selectbox(
             "Sort By:",
             sorting_options,
             index=len(sorting_options) - 1  # Default to Overall Ranking
         )
 
-        # Get all unique attributes (case insensitive)
-        unique_attributes = set()
-        for group in category_rankings.values():
-            for product in group:
-                unique_attributes.update(set([attr.lower() for attr in product.get("attribute_tokenset", [])]))
+        st.sidebar.write('---')
 
-        st.markdown("### 🏷️ Filter by Attributes")
+        # Get all unique attributes for the selected category
+        all_products_in_category = get_all_products_for_category(selected_category)
+        unique_attributes = set()
+        for product in all_products_in_category:
+            unique_attributes.update(set([attr.lower() for attr in product.get("attribute_tokenset", [])]))
+
+        st.markdown("### Filter by Attributes")
 
         # Attribute Selection Mode
         attribute_mode = st.selectbox(
             "Attribute Mode:",
             ("All Available Attributes", "Enter Custom Attributes"),
-            index=0,
-            help="Choose how you want to select attributes"
+            index=1,
         )
 
-        # Attribute Selection Logic - Show all attributes without truncation
+        # Attribute Selection Logic
         if attribute_mode == "All Available Attributes":
             selected_attributes = st.multiselect(
                 "Select Attributes:",
@@ -1099,9 +1128,25 @@ with st.sidebar:
                 placeholder="e.g., cotton round oversized",
                 help="Enter attributes separated by spaces"
             )
-            # Convert to lowercase for case-insensitive matching
             selected_attributes = [attr.lower() for attr in
                                    custom_attributes_input.split()] if custom_attributes_input else []
+
+        st.sidebar.write('---')
+
+        # Add this after the attribute selection section in the sidebar
+        st.markdown("### Display Settings")
+        product_limit_percentage = st.slider(
+            "Products to Show:",
+            min_value=10,
+            max_value=100,
+            value=10,
+            step=10,
+            format="%d%%",
+            help="Adjust the percentage of products to display for better performance"
+        )
+
+        if custom_attributes_input:
+            product_limit_percentage = 100
 
 
 # Function to Filter Products by Attributes (case-insensitive)
@@ -1131,15 +1176,45 @@ def safe_numeric(value, default=0):
         return float(value)
     except (ValueError, TypeError, AttributeError):
         return default
-
-
-# ENHANCED TREND ANALYSIS PAGE - FIXED AND MORE USEFUL
+# ENHANCED TREND ANALYSIS PAGE - MULTI-CATEGORY VERSION
 if page == "Trend Analysis":
-    st.markdown("## 📊 Market Intelligence Dashboard")
-    st.markdown("Get actionable insights to drive your product strategy and design decisions")
+    st.markdown("## 📊 Multi-Category Market Intelligence Dashboard")
+    st.markdown("Get actionable insights across all product categories to drive your strategy")
 
-    # Quick Stats Overview
-    st.markdown("### 📈 Market Overview")
+    # Category selection for trend analysis
+    st.markdown("### 🎯 Select Category for Analysis")
+    trend_category = st.selectbox(
+        "Choose Category:",
+        available_categories,
+        index=0,
+        format_func=lambda x: x.replace('-', ' ').title(),
+        key="trend_category"
+    )
+
+    # Get data for selected category
+    category_info = get_category_data(trend_category)
+    if not category_info:
+        st.error(f"No data found for category: {trend_category}")
+        st.stop()
+
+    category_rankings = category_info["category_rankings"]
+    overall_ranking = category_info["overall_ranking"]
+
+    # Show processing summary
+    if processing_summary:
+        st.markdown("### 📋 Processing Summary")
+        summary_col1, summary_col2, summary_col3 = st.columns(3)
+
+        with summary_col1:
+            st.metric("Total Categories", processing_summary.get("total_categories_processed", 0))
+        with summary_col2:
+            st.metric("Total Products", processing_summary.get("total_products_across_categories", 0))
+        with summary_col3:
+            st.metric("Current Category", f"{trend_category.replace('-', ' ').title()}")
+
+    # Quick Stats Overview for selected category
+    st.markdown(f"### 📈 {trend_category.replace('-', ' ').title()} Market Overview")
+    st.markdown("Get actionable insights to drive your product strategy and design decisions")
 
     # Calculate key metrics with safe numeric conversion
     total_products = sum(len(group) for group in category_rankings.values())
@@ -1198,32 +1273,33 @@ if page == "Trend Analysis":
     attribute_df = pd.DataFrame(sorted_attributes, columns=["Attribute", "Count"])
 
     # Create an enhanced Plotly chart with better styling
-    fig = px.bar(
-        attribute_df,
-        x="Count",
-        y="Attribute",
-        orientation='h',
-        color="Count",
-        color_continuous_scale="viridis",
-        title="Attribute Popularity Distribution",
-        text="Count"
-    )
+    if not attribute_df.empty:
+        fig = px.bar(
+            attribute_df,
+            x="Count",
+            y="Attribute",
+            orientation='h',
+            color="Count",
+            color_continuous_scale="viridis",
+            title="Attribute Popularity Distribution",
+            text="Count"
+        )
 
-    fig.update_layout(
-        height=600,
-        showlegend=False,
-        font=dict(family="Inter, sans-serif", color="white"),
-        title_font_size=18,
-        xaxis_title="Frequency",
-        yaxis_title="Attributes",
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
-        yaxis=dict(gridcolor='rgba(255,255,255,0.1)')
-    )
+        fig.update_layout(
+            height=600,
+            showlegend=False,
+            font=dict(family="Inter, sans-serif", color="white"),
+            title_font_size=18,
+            xaxis_title="Frequency",
+            yaxis_title="Attributes",
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(gridcolor='rgba(255,255,255,0.1)'),
+            yaxis=dict(gridcolor='rgba(255,255,255,0.1)')
+        )
 
-    fig.update_traces(texttemplate='%{text}', textposition='outside')
-    st.plotly_chart(fig, use_container_width=True)
+        fig.update_traces(texttemplate='%{text}', textposition='outside')
+        st.plotly_chart(fig, use_container_width=True)
 
     # 1. PRICE OPPORTUNITY ANALYSIS - Fixed with safe numeric conversion
     st.markdown("### 💰 Price Opportunity Matrix")
@@ -1548,7 +1624,6 @@ if page == "Trend Analysis":
                 </div>
                 <p style="color: #e0e0e0; margin: 0.5rem 0; font-weight: 600;">{rec['action']}</p>
                 <p style="color: #b3b3b3; margin: 0.5rem 0; font-size: 0.9rem;">{rec['rationale']}</p>
-                <p style="color: #4db8ff; margin: 0; font-size: 0.9rem;">⏱️ Implementation Timeline: {rec['timeline']}</p>
             </div>
             """, unsafe_allow_html=True)
     else:
@@ -1578,24 +1653,21 @@ if page == "Trend Analysis":
         - Market share shifts (>10% change)
         """)
 
-    # Export functionality suggestion
-    st.markdown("---")
-    st.info(
-        "💡 **Next Steps**: Use these insights to brief your design team, update your product roadmap, and schedule monthly trend reviews.")
-
     # Summary footer
     st.markdown(f"""
     <div style="text-align: center; padding: 1rem; color: #b3b3b3; border-top: 1px solid #4a4a4a;">
-        <p><strong>Analysis Complete</strong> - {total_products} products analyzed across {len(category_rankings)} categories</p>
-        <p style="font-size: 0.9rem;">Last updated: {pd.Timestamp.now().strftime('%B %d, %Y at %I:%M %p')}</p>
+        <p><strong>Analysis Complete</strong> - {total_products} products analyzed in {trend_category.replace('-', ' ').title()}</p>
+        <p style="font-size: 0.9rem;">Data includes {len(available_categories)} categories: {', '.join([cat.replace('-', ' ').title() for cat in available_categories])}</p>
+        <p style="font-size: 0.9rem;">Last updated: {processing_summary.get('processing_date', pd.Timestamp.now().strftime('%B %d, %Y at %I:%M %p'))}</p>
     </div>
     """, unsafe_allow_html=True)
 
     st.stop()
 
 
-# PRODUCTS PAGE CONTENT
-def display_products(filtered_data, section_title):
+# PRODUCTS PAGE CONTENT - UPDATED FOR MULTI-CATEGORY
+# Update the function signature and add limit parameter
+def display_products(filtered_data, section_title, category_name, limit_percentage=30):
     if filtered_data.empty:
         st.markdown("""
         <div class="no-results">
@@ -1605,29 +1677,35 @@ def display_products(filtered_data, section_title):
         """, unsafe_allow_html=True)
         return
 
+    # Calculate number of products to show
+    total_products = len(filtered_data)
+    products_to_show = max(1, round(total_products * limit_percentage / 100))
+
+    # Limit the data
+    limited_data = filtered_data.head(products_to_show)
+
     st.markdown(f"""
     <div class="section-header">
-        <h2 class="section-title">{section_title}</h2>
-        <span class="results-count">{len(filtered_data)} Results</span>
+        <h3 class="section-title">{section_title}</h3>
+        <span class="results-count">Showing {len(limited_data)} of {total_products} Results</span>
     </div>
     """, unsafe_allow_html=True)
 
-    for idx, (_, product) in enumerate(filtered_data.iterrows(), 1):
-        # Prepare attributes display - Show all attributes
+    # Rest of the function remains the same, but use limited_data instead of filtered_data
+    for idx, (_, product) in enumerate(limited_data.iterrows(), 1):
+        # Prepare attributes display
         attributes = product.get("attribute_tokenset", [])
-        attr_display = " | ".join(attributes)  # Show all attributes
+        attr_display = " | ".join(attributes)
 
-        # Prepare reviews display - Only show if reviews exist
+        # Prepare reviews display
         reviews_html = ""
         review_count = 0
         for i in range(1, 4):
             review = product.get(f'reviews_detail.{i}', '')
             if review and str(review) != 'nan' and str(review).strip():
-                # Increased to 120 characters
                 reviews_html += f'<div class="review-item">• {str(review)[:120]}{"..." if len(str(review)) > 120 else ""}</div>'
                 review_count += 1
 
-        # Only create reviews section if there are actual reviews
         reviews_section = ""
         if review_count > 0:
             reviews_section = f'<div class="reviews-section"><div class="reviews-title">RECENT REVIEWS</div>{reviews_html}</div>'
@@ -1640,10 +1718,10 @@ def display_products(filtered_data, section_title):
             cat_ranks.append(f"<div class='rank-info'>#{int(rank)} in {cat}</div>")
         cat_ranks_str = "".join(cat_ranks)
 
-        # URL for product details
-        details_url = f"?product_id={product['product_id']}"
+        # URL for product details with category
+        details_url = f"?product_id={product['product_id']}&category={category_name}"
 
-        # Product card with buttons
+        # Product card with updated buttons
         st.markdown(f"""
         <div class="product-card">
             <div class="product-content">
@@ -1677,6 +1755,9 @@ def display_products(filtered_data, section_title):
                         <div class="rank-info">
                             Platform Rank: #{product['sorting_rank']} in {product.get('sorting', 'N/A')}
                         </div>
+                        <div class="rank-info">
+                            Category: {category_name.replace('-', ' ').title()}
+                        </div>
                         {cat_ranks_str}
                     </div>
                     <div class="product-attributes">
@@ -1694,31 +1775,37 @@ def display_products(filtered_data, section_title):
             <a href="{product['product_link']}" target="_blank" class="btn btn-full">
                 🛒 View Product
             </a>
-            <a href="?product_id={product['product_id']}" class="btn btn-full">
+            <a href="?product_id={product['product_id']}&category={category_name}" class="btn btn-full">
                 📋 Complete Details
             </a>
         </div>
         """, unsafe_allow_html=True)
 
 
-# DISPLAY PRODUCTS BASED ON SORTING
-if sorting_group != "Overall Ranking":
-    section_title = f"🎯 Best Products in {sorting_group}"
-    group_data = category_rankings[sorting_group]
-    filtered_data = filter_products_by_attributes(group_data, selected_attributes)
-    display_products(filtered_data, section_title)
-else:
-    section_title = "🏆 Overall Best Products"
-    filtered_data = filter_products_by_attributes(
-        overall_ranking.to_dict(orient="records"),
-        selected_attributes
-    )
-    display_products(filtered_data, section_title)
+# DISPLAY PRODUCTS BASED ON SORTING - UPDATED FOR MULTI-CATEGORY
+# Update both display_products calls to include the limit parameter
+if page == "Products":
+    category_info = get_category_data(selected_category)
+
+    if sorting_group != "Overall Ranking":
+        section_title = f"Best {selected_category.replace('-', ' ').title()} in {sorting_group}"
+        group_data = category_info["category_rankings"][sorting_group]
+        filtered_data = filter_products_by_attributes(group_data, selected_attributes)
+        display_products(filtered_data, section_title, selected_category, product_limit_percentage)
+    else:
+        section_title = f"Overall Best {selected_category.replace('-', ' ').title()}"
+        filtered_data = filter_products_by_attributes(
+            category_info["overall_ranking"].to_dict(orient="records"),
+            selected_attributes
+        )
+        display_products(filtered_data, section_title, selected_category, product_limit_percentage)
 
 # FOOTER
 st.markdown("---")
-st.markdown("""
+st.markdown(f"""
 <div style="text-align: center; padding: 1.5rem; color: #b3b3b3;">
-    <p>🚀 <strong>Rawcult Trend Analysis</strong> - Powered by Data-Driven Insights</p>
+    <p>🚀 <strong>Rawcult Multi-Category Trend Analysis</strong> - Powered by Data-Driven Insights</p>
+    <p style="font-size: 0.9rem;">Analyzing {len(available_categories)} categories: {', '.join([cat.replace('-', ' ').title() for cat in available_categories])}</p>
+    <p style="font-size: 0.9rem;">Total products across all categories: {processing_summary.get('total_products_across_categories', 'N/A')}</p>
 </div>
 """, unsafe_allow_html=True)

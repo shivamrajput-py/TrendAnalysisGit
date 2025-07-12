@@ -1,12 +1,5 @@
-'''DATA SCRAPPING BOT [BOMBAY SHIRT COMPANY] FOR RAWCULT TREND-ANALYSIS
-~ SHIVAM RAJPUT '''
-''' ALL PARAMETERS ARE PRESENT IN FLIPKART ''' #TODO: "Sometimes" a error appeares, price & original price ki place Title aajata
-
-# THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://www.myntra.com/men-tshirts',
-    # 'men-casual-shirts': 'https://www.myntra.com/men-casual-shirts'
-}
+'''DATA SCRAPPING BOT [MYNTRA] FOR RAWCULT TREND-ANALYSIS
+~ SHIVAM RAJPUT ''' #TODO: IMAGE AND NEXT BUTTON
 
 # SORTING DICTIONARY ACCORDING TO THE SOURCE URL
 sort_list = {
@@ -18,7 +11,8 @@ sort_list = {
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['Myntra']
+URL_DICT = TO_SCRAPE_URL_DICT['Myntra']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -26,7 +20,7 @@ IMPLICIT_WAIT = 0.5
 #-------------------------------------------------------------------------------------------------------------
 
 # ALL IMPORT IMPORTS
-import time, json, ssl
+import time, json, ssl, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -141,7 +135,10 @@ for SUB_CATEGORY in URL_DICT.keys():
         for page in range(0, no_scrolls+1):
             index = 1
             if page>0:
-                driver.find_element(By.XPATH, '/html/body/div[2]/div/main/div[3]/div[2]/div/div[2]/section/div[2]/ul/li[4]').click()
+                try:
+                    driver.find_element(By.XPATH, '/html/body/div[2]/div/main/div[3]/div[2]/div/div[2]/section/div[2]/ul/li[4]').click()
+                except:
+                    continue
 
             # SCROLL TO LOAD THE PAGE UP TO 70% DYNAMICALLY
             total_height = driver.execute_script("return document.body.scrollHeight")
@@ -239,6 +236,8 @@ for SUB_CATEGORY in URL_DICT.keys():
                 try: original_price = int(original_price)
                 except: original_price = original_price
 
+                if not str(discounted_price).isnumeric(): continue
+
                 productList.append(elm.find_element(By.XPATH, f'/html/body/div[2]/div/main/div[3]/div[2]/div/div[2]/section/ul/li[{j+1}]/a').get_attribute('href'))
 
                 # ADDING THE DATA TO THE FINAL DATA
@@ -295,14 +294,7 @@ for SUB_CATEGORY in URL_DICT.keys():
                     attributes_line[i] = line.lower().strip()
 
                 for i, line in enumerate(attributes_line):
-                    if line in details_crap: attributes_line.pop(i)
-
-                for i, line in enumerate(attributes_line):
                     attributes_line[i] = line.strip().split(' ')
-
-                for i, line in enumerate(attributes_line):
-                    for x, word in enumerate(line):
-                        if word in details_crap: line.pop(x)
 
                 for i, line in enumerate(attributes_line):
                     attributes_line[i] = ' '.join(line)
@@ -317,9 +309,11 @@ for SUB_CATEGORY in URL_DICT.keys():
             sample[j]['reviews_detail'] = revwDict
             sample[j]['attributes'] = attributes
             sample[j]['category'] = SUB_CATEGORY
-            sample[j]['platform'] = 'Myntra'
+            sample[j]['platform']:str = "Myntra",
+            sample[j]['dataDate'] = datetime.datetime.now().strftime("%d-%m-%Y || %H:%M")
 
             j += 1
+            print(f"{j}: {reviews_count} ")
 
         # MAINTAING THE FINAL DATA SET WITH EACH LOOP
         FINALDATA[SUB_CATEGORY][sort_type] = sample

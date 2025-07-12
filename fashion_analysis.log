@@ -1,0 +1,39 @@
+2025-07-12 11:15:57,572 - ERROR - Error loading category data from prodData_MyntraF.json: unhashable type: 'list'
+2025-07-12 11:15:57,591 - ERROR - Error loading category data from prodData_MyntrafwdF.json: unhashable type: 'list'
+2025-07-12 11:15:57,607 - INFO - Processing category: men-jeans
+2025-07-12 11:15:57,917 - INFO - Validating dataframe with 1760 rows
+2025-07-12 11:15:57,935 - INFO - Removed 971 duplicate products
+2025-07-12 11:15:57,935 - INFO - Dataframe validation complete. Final size: 789 rows
+2025-07-12 11:15:57,935 - INFO - Starting enhanced median imputation
+2025-07-12 11:15:57,956 - INFO - Enhanced median imputation completed
+2025-07-12 11:15:57,957 - INFO - Calculating enhanced review scores
+2025-07-12 11:15:57,991 - ERROR - Error in calculate_enhanced_review_score: single positional indexer is out-of-bounds
+2025-07-12 11:15:57,991 - INFO - Calculating enhanced composite scores
+2025-07-12 11:15:58,012 - INFO - Enhanced composite score calculation completed
+2025-07-12 11:15:58,086 - INFO - Successfully processed 789 products from 13 platforms for men-jeans
+2025-07-12 11:15:58,182 - ERROR - Error loading category data from prodData_MyntraF.json: unhashable type: 'list'
+2025-07-12 11:15:58,197 - ERROR - Error loading category data from prodData_MyntrafwdF.json: unhashable type: 'list'
+2025-07-12 11:15:58,215 - INFO - Processing category: men-shirts
+2025-07-12 11:15:58,506 - INFO - Validating dataframe with 1745 rows
+2025-07-12 11:15:58,519 - INFO - Removed 933 duplicate products
+2025-07-12 11:15:58,519 - INFO - Dataframe validation complete. Final size: 812 rows
+2025-07-12 11:15:58,519 - INFO - Starting enhanced median imputation
+2025-07-12 11:15:58,536 - INFO - Enhanced median imputation completed
+2025-07-12 11:15:58,536 - INFO - Calculating enhanced review scores
+2025-07-12 11:15:58,570 - ERROR - Error in calculate_enhanced_review_score: single positional indexer is out-of-bounds
+2025-07-12 11:15:58,570 - INFO - Calculating enhanced composite scores
+2025-07-12 11:15:58,590 - INFO - Enhanced composite score calculation completed
+2025-07-12 11:15:58,666 - INFO - Successfully processed 812 products from 12 platforms for men-shirts
+2025-07-12 11:15:58,791 - ERROR - Error loading category data from prodData_MyntraF.json: unhashable type: 'list'
+2025-07-12 11:15:58,808 - ERROR - Error loading category data from prodData_MyntrafwdF.json: unhashable type: 'list'
+2025-07-12 11:15:58,829 - INFO - Processing category: men-tshirts
+2025-07-12 11:15:59,278 - INFO - Validating dataframe with 2238 rows
+2025-07-12 11:15:59,295 - INFO - Removed 847 duplicate products
+2025-07-12 11:15:59,296 - INFO - Dataframe validation complete. Final size: 1391 rows
+2025-07-12 11:15:59,296 - INFO - Starting enhanced median imputation
+2025-07-12 11:15:59,321 - INFO - Enhanced median imputation completed
+2025-07-12 11:15:59,321 - INFO - Calculating enhanced review scores
+2025-07-12 11:15:59,389 - ERROR - Error in calculate_enhanced_review_score: single positional indexer is out-of-bounds
+2025-07-12 11:15:59,389 - INFO - Calculating enhanced composite scores
+2025-07-12 11:15:59,418 - INFO - Enhanced composite score calculation completed
+2025-07-12 11:15:59,615 - INFO - Successfully processed 1,391 products from 13 platforms for men-tshirts

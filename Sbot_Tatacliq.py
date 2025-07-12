@@ -1,22 +1,16 @@
-# SCRAPPING TATACLIQ FOR RAW CULT TREND ANALYSIS AND FORECASTING PROJECT !!
-# - SHIVAM RAJPUT # COMPLETED 85% # LAST UPDATED - 27-12-night
-''' WRITTEN REVIEWS AND REVIEWS COUNT ARE NOT THERE IN TATACLIQ'''
+'''DATA SCRAPPING BOT [TATA CLIQ] FOR RAWCULT TREND-ANALYSIS
+~ SHIVAM RAJPUT '''
 
 # ALL IMPORT IMPORTS
-import time, json
+import time, json, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from runBot_TA import *
 
-# THE SUB CATOGORIES OF MYNTRA YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://www.tatacliq.com/mens-clothing-casual-wear-t-shirts-polos/c-msh1116100?q=%3Arelevance%3Acategory%3AMSH1116100%3AinStockFlag%3Atrue%3Adisplay-classification%3APolo+T-Shirts%3Adisplay-classification%3APolo+T-Shirt%3Adisplay-classification%3APolo%2BT-shirts&icid2=regu:nav:main:mnav:m1116100:mulb:best:09:R3'
-}
-
-# EDITABLE CONSTANTS
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+URL_DICT = TO_SCRAPE_URL_DICT['Tatacliq']
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['Tatacliq']
 HEADLESS_BROWSER = False
 scroll_pause_time = 1.5 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
@@ -30,9 +24,6 @@ sort_dict = {
 scroll_height_step = 1000
 FINALDATA = {}
 scroll_count = int(MAX_PRODUCT_FROM_EACH_CATEGORY / 8) + 1  # Set the maximum number of scrolls
-
-#TODO: a lot to put in here cause of that short description thing
-details_crap = []
 
 options = webdriver.ChromeOptions()
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36")
@@ -84,9 +75,9 @@ for SUB_CATEGORY in URL_DICT:
             else:
                 break
 
-        for elm in driver.find_elements(By.XPATH, '//div[contains(@class, "PlpComponent__base")]'):
+        for elm in driver.find_elements(By.CSS_SELECTOR, '.PlpComponent__base'):
             try:
-                productList.append(elm.find_element(By.XPATH, 'div/a').get_attribute('href'))
+                productList.append(elm.find_element(By.TAG_NAME, 'a').get_attribute('href'))
             except:
                 continue
 
@@ -113,7 +104,7 @@ for SUB_CATEGORY in URL_DICT:
                         img_link = img_link.find_element(By.TAG_NAME, 'img').get_attribute('src')
                     except:
                         print(f'Image Link Error in {product}')
-                        img_link = None
+                        continue
 
             # BRAND *
             try:
@@ -163,39 +154,31 @@ for SUB_CATEGORY in URL_DICT:
             except:
                 original_price = price
 
-            # RATING INFO
+            driver.execute_script(f"window.scrollTo(0, 2250);")
+            time.sleep(0.8)
+
+            # RATING COUNTS
             try:
-                rating_info = driver.find_element(By.CSS_SELECTOR, '.ProductDetailsMainCard__labelText').text
-
-                # EXTRACTING REQUIRED DATA.
-                ratings_count = rating_info.split('Ratings')[0].strip()
-                ratings_count = rating_info.split('Rating')[0].strip()
-                if convert_to_number(ratings_count).replace(',', '').replace('.', '').isnumeric():
-                    ratings_count = int(convert_to_number(ratings_count).replace(',', ''))
-                else:
-                    ratings_count = convert_to_number(ratings_count).replace(',', '')
-
-                reviews_count = None
-                revwDict = {}
-
+                ratings_count = int(driver.find_element(By.CSS_SELECTOR, 'span[itemprop="ratingCount"]').text.lower())
             except:
                 ratings_count = None
+
+            # REVIEWS COUNT
+            try:
+                reviews_count = int(driver.find_element(By.CSS_SELECTOR, 'span[itemprop="reviewCount"]').text.lower())
+            except:
                 reviews_count = None
-                revwDict = {}
 
             # RATINGS NUMBER
             try:
-                rating = driver.find_element(By.CSS_SELECTOR, '.ProductDetailsMainCard__reviewElectronics').text
-
+                rating = driver.find_element(By.CSS_SELECTOR, 'div[itemprop="ratingValue"]').text
                 # EXTRACTING
                 if rating.replace('.', '').isnumeric():
                     rating = round(float(rating), 1)
                 else:
                     rating = rating
-
             except:
                 rating = None
-
 
             # PRODUCT DETAILS VALUES - ATTRIBUTES
             attributes = []
@@ -207,13 +190,13 @@ for SUB_CATEGORY in URL_DICT:
             except:
                 attributes = []
 
-            # ATTRIBUTE FORMATTING
-            attributes = [
-                [word for word in line.lower().strip().split() if word not in details_crap]
-                for line in attributes if line.strip()
-            ]
-            attributes = [attr for attr in attributes if attr]
-            attributes = [" ".join(attr) for attr in attributes]
+            # REVIEWS DICT
+            revwDict = {}
+            try:
+                for i, k in enumerate(driver.find_elements(By.CSS_SELECTOR, '.ReviewPage__text')):
+                    revwDict[i + 1] = k.text
+            except:
+                revwDict = {}
 
             sample.append({
                 'product_id': make_id(title, brand),
@@ -232,16 +215,19 @@ for SUB_CATEGORY in URL_DICT:
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
                 'platform': 'Tatacliq',
-                }
-            )
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M")
+            })
+
+            print(rating, ratings_count, reviews_count, revwDict)
 
             index += 1
 
         FINALDATA[SUB_CATEGORY][sort_type] = sample
 
-smpdt = FINALDATA[SUB_CATEGORY]['Popularity']
-for dt in smpdt: dt['sorting'] = 'Recommended'
-FINALDATA[SUB_CATEGORY]['Recommended'] = smpdt
+for SUB_CATEGORY in URL_DICT.keys():
+    smpdt = FINALDATA[SUB_CATEGORY]['Popularity']
+    for dt in smpdt: dt['sorting'] = 'Recommended'
+    FINALDATA[SUB_CATEGORY]['Recommended'] = smpdt
 
 # MAKING THE JSON FILE FO THE FINAL DATA
 with open(f'prodData_Tatacliq.json', 'w', encoding="utf-8") as fl:

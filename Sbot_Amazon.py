@@ -1,43 +1,38 @@
 '''DATA SCRAPPING BOT [AMAZON] FOR RAWCULT TREND-ANALYSIS
-~ SHIVAM RAJPUT '''
-
-# TODO: ERROR SOMETIMES SORTING OPTION NUMBERING CHANGES SO IT DOES SCRAPE OTHER CATEGORY
-# TODO: MIGHT HAVE TO INCLUDE CLICKING THE CATEGORY BUTTON ON AMAZON FOR DIFFERENT LATEST PRODUCTS
-
-# # THE SUB-CATEGORIZED LINK DICTIONARY YOU WANT TO SCRAPE! PUT THE LINKS HERE
-URL_DICT = {
-    'men-tshirts': 'https://www.amazon.in/s/ref=QAHzEditorial_en_IN_1?pf_rd_r=3BPVPG1S1T0FAN1V26GY&pf_rd_p=d3f92d56-2e4f-44db-b7c8-6966099e01eb&pf_rd_m=A1VBAL9TL5WCBF&pf_rd_s=merchandised-search-11&pf_rd_t=&pf_rd_i=1968120031&i=apparel&bbn=1968120031&rh=n%3A1571271031%2Cn%3A1968024031%2Cn%3A1968120031%2Cn%3A1968123031%2Cp_85%3A10440599031%2Cp_n_feature_browse-bin%3A95166419031%2Cp_36%3A50000-%2Cp_123%3A1298678%7C156780%7C179318%7C198664%7C200356%7C2006%7C232621%7C232755%7C232761%7C232762%7C232763%7C240905%7C256097%7C319726%7C339433%7C373328%7C3878%7C390827%7C398346%7C406102%7C411593%7C435051%7C46245%7C484445%7C573837%7C586466%7C613702%7C7459781031%7C951834%2Cp_72%3A1318476031%2Cp_n_pct-off-with-tax%3A2665401031&s=exact-aware-popularity-rank&dc&hidden-keywords=-women-woman-boy-girl-kid-sneaker-vest-sleeveless-formal&qid=1720523111&rnid=2665398031&ref=sr_st_exact-aware-popularity-rank&ds=v1%3Az8WSx8l1LR%2FETPj3IjrtIIbWa4toA9JFyevP%2BoWUYqs'
-}
+~ SHIVAM RAJPUT [REVIEWS COUNT IS NOT VISIBLE TILL YOU LOGIN]'''
 
 # SORTINGS DICTIONARY ACCORDING TO THE SOURCE URL
 sort_dict = {
-    'Recommended': 1,
-    'Popularity' : 6,
-    'Freshness' : 5,
-    'Feedback': 4
+    'Recommended': 'Featured',
+    'Popularity' : 'Best Sellers',
+    'Freshness' : 'Newest Arrivals',
+    'Feedback': 'Avg. Customer Review'
 }
 
 # IMPORTANT PARAMETERS
 from runBot_TA import *
-MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE
+MAX_PRODUCT_FROM_EACH_CATEGORY = NO_OF_PRODUCTS_TO_SCRAPE['Amazon']
+URL_DICT = TO_SCRAPE_URL_DICT['Amazon']
 HEADLESS_BROWSER = False
-scroll_pause_time = 1.5 # According to your Internet Speed
+scroll_pause_time = 1.8 # According to your Internet Speed
 IMPLICIT_WAIT = 0.5
 
 #-------------------------------------------------------------------------------------------------------------
 
 # ALL IMPORT IMPORTS
-import time, json, ssl
+import time, json, ssl, datetime
 tm_start = time.time()
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 # CONSTANTS
 scroll_height_step = 1000
 FINALDATA = {}
-no_scrolls = int(MAX_PRODUCT_FROM_EACH_CATEGORY/48) # 40 products per scroll
+no_scrolls = int(MAX_PRODUCT_FROM_EACH_CATEGORY/51) # 40 products per scroll
 
-if MAX_PRODUCT_FROM_EACH_CATEGORY==40: no_scrolls = 0
+if MAX_PRODUCT_FROM_EACH_CATEGORY==51: no_scrolls = 0
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -132,10 +127,11 @@ for SUB_CATEGORY in URL_DICT.keys():
         driver.get(URL_DICT[SUB_CATEGORY])
         try:
             driver.find_element(By.ID, 'a-autoid-0-announce').click()
-            driver.find_element(By.XPATH, f'//*[@id="a-popover-2"]/div/div/ul/li[3]').click()
-            time.sleep(1)
-        except:
-            print(f'Some error in Scrapping {sort_type} | AMAZON ')
+            # driver.find_element(By.XPATH, f'//*[@id="a-popover-2"]/div/div/ul/li[3]').click()
+            driver.find_element(By.LINK_TEXT, f'{sort_dict[sort_type]}').click()
+            time.sleep(0.5)
+        except Exception as e:
+            print(f'Some error in Scrapping {sort_type} | AMAZON \n{e}')
             continue
 
         # SETTING UP LOOP VARIABLE TO THE INITAL VALUES
@@ -147,8 +143,8 @@ for SUB_CATEGORY in URL_DICT.keys():
 
         for page in range(0, no_scrolls+1):
             if page>0:
-                driver.find_element(By.XPATH, '/html/body/div[1]/div/div[3]/div[1]/div[2]/div[12]/div/div/nav/a[11]').click()
-                time.sleep(1)
+                driver.find_element(By.LINK_TEXT, 'Next').click()
+                time.sleep(0.7)
 
             # SCROLL TO LOAD THE PAGE UP TO 70% DYNAMICALLY
             total_height = driver.execute_script("return document.body.scrollHeight")
@@ -185,6 +181,35 @@ for SUB_CATEGORY in URL_DICT.keys():
         for product in productList:
 
             driver.get(product)
+
+            # Wait for the button to be clickable and click it
+            try:
+                # Most common selectors for Amazon's continue shopping buttons:
+                continue_button = WebDriverWait(driver, 1).until(
+                    EC.element_to_be_clickable((By.XPATH, "//input[@value='Continue shopping']"))
+                )
+                continue_button.click()
+            except:
+                # Alternative selectors to try:
+                selectors = [
+                    "//button[contains(text(), 'Continue')]",
+                    "//a[contains(text(), 'Continue')]",
+                    "//input[contains(@value, 'Continue')]",
+                    "[data-action='continue-shopping']",
+                    ".continue-shopping-button",
+                    "#continue-shopping"
+                ]
+
+                for selector in selectors:
+                    try:
+                        if selector.startswith("//"):
+                            element = driver.find_element(By.XPATH, selector)
+                        else:
+                            element = driver.find_element(By.CSS_SELECTOR, selector)
+                        element.click()
+                        break
+                    except:
+                        continue
 
             # IMAGE LINK *
             try:
@@ -276,14 +301,14 @@ for SUB_CATEGORY in URL_DICT.keys():
             attributes = [" ".join(attr) for attr in attributes]
 
             driver.execute_script(f"window.scrollTo(0, 3000);")
-            time.sleep(1)
+            time.sleep(0.7)
 
             # WRITTEN REVIEWS
             revwDict = {}
             try:
                 for i,k in enumerate(driver.find_elements(By.CSS_SELECTOR, '.a-row.a-spacing-small.review-data')):
                     if i==3: break
-                    revwDict[i+1] = k.text
+                    revwDict[i+1] = k.text.strip()
             except:
                 revwDict = {}
 
@@ -306,7 +331,8 @@ for SUB_CATEGORY in URL_DICT.keys():
                 'attributes': attributes,
                 'category': SUB_CATEGORY,
                 'platform': 'Amazon',
-                }
+                'dataDate': datetime.datetime.now().strftime("%d-%m-%Y || %H:%M"),
+            }
             )
 
             index+= 1
@@ -315,7 +341,7 @@ for SUB_CATEGORY in URL_DICT.keys():
 
 # MAKING THE JSON FILE FO THE FINAL DATA
 with open(f'prodData_Amazon.json', 'w', encoding="utf-8") as fl:
-    fl.write(json.dumps(FINALDATA, indent=2, ensure_ascii=False))
+    fl.write(json.dumps(FINALDATA, indent=1, ensure_ascii=False))
 
 driver.quit()
 tm_end = time.time()
