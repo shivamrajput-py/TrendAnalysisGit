@@ -1071,7 +1071,7 @@ if 'product_id' in st.query_params and 'category' in st.query_params:
 # MAIN APP CONTENT
 
 # PAGE SELECTION
-page = st.sidebar.pills("", ["Products", "Trend Analysis"], label_visibility='hidden', default='Products')
+page = st.sidebar.pills("Choose:", ["Products", "Trend Analysis"], label_visibility='hidden', default='Products')
 
 # SIDEBAR CONFIGURATION
 with st.sidebar:
