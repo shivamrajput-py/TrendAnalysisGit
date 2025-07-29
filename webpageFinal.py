@@ -760,7 +760,7 @@ load_css()
 
 # LOAD JSON DATA
 try:
-    with open('multi_category_trend_analysis_20250712_11.json', 'r', encoding='utf-8') as f:
+    with open('_ImprovedTrendAnalysis_20250730_0211.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
 except FileNotFoundError:
     st.error(
@@ -774,6 +774,76 @@ if "results" in data:
 else:
     st.error("Invalid data format. Please check the JSON file structure.")
     st.stop()
+
+config = {
+    'displayModeBar': True,
+    'displaylogo': False,
+    'modeBarButtonsToRemove': ['pan2d', 'select2d', 'lasso2d'],  # Removed zoom buttons to keep reset functionality
+    'toImageButtonOptions': {
+        'format': 'png',
+        'filename': 'chart',
+        'height': 500,
+        'width': 700,
+        'scale': 1
+    }
+}
+
+
+# Define category-specific common attributes
+def get_common_attributes_for_category(category_name):
+    """Get common attributes based on category"""
+
+    men_jeans_attributes = [
+        "jeans", "fit", "rise", "cotton", "blue", "solid", "wear", "pocket",
+        "pattern", "denim", "length", "style", "material", "fabric", "closure",
+        "type", "machine", "straight", "full", "button", "casual", "waist",
+        "slim", "baggy", "black", "regular", "color", "occasion", "waistband",
+        "brand", "premium", "stretch", "finish", "cuffed", "blend", "washed",
+        "distressed", "ripped", "cargo", "tailored", "light", "dark", "quality",
+        "soft", "package", "design", "look", "straightfit", "skinny", "tapered",
+        "relaxed", "indigo", "stretchable", "midrise", "lowrise", "highrise",
+        "fivepocket", "clean", "stonewash", "elastic", "durable", "regularlength",
+        "ankle", "knee", "classic", "denimmaterial"
+    ]
+
+    men_shirts_attributes = [
+        "fit", "regular", "casual", "cotton", "pattern", "wear", "neck", "full",
+        "fabric", "sleeve", "solid", "design", "product", "formal", "slim",
+        "machine", "type", "spread", "button", "brand", "occasion", "material",
+        "printed", "white", "oversized", "blue", "color", "style", "pocket",
+        "finish", "tailored", "embroidered", "minimalist", "textured", "collegiate",
+        "linen", "stripe", "check", "striped", "mandarin", "shirt", "longsleeve",
+        "half", "short", "curvedhem", "straighthem", "wrinklefree", "buttondown",
+        "denim", "blend", "yarn", "india", "slub", "organic", "brandcode"
+    ]
+
+    men_tshirts_attributes = [
+        "fit", "neck", "cotton", "sleeve", "regular", "round", "pattern",
+        "half", "oversized", "printed", "material", "fabric", "type", "polo",
+        "style", "wear", "details", "short", "100%", "machine", "solid", "color",
+        "composition", "design", "category", "print", "graphic", "black", "white",
+        "brand", "casual", "length", "premium", "blend", "polyester", "india",
+        "logo", "text", "minimal", "vneck", "crewneck", "mockneck", "henley",
+        "sleeveless", "longsleeve", "tunic", "rib", "breathable", "quickdry",
+        "moisturewick", "bio-wash", "regularlength", "street", "sportswear", "vintage"
+    ]
+
+    # General attributes for other categories
+    general_attributes = [
+        'cotton', 'polyester', 'oversized', 'regular fit', 'slim fit', 'round neck', 'v-neck',
+        'half sleeve', 'full sleeve', 'casual', 'formal', 'printed', 'solid', 'black', 'white',
+        'blue', 'red', 'gray', 'navy', 'green', 'pink', 'yellow', 'purple', 'orange',
+        'medium', 'large', 'small', 'xl', 'xxl', 'breathable', 'comfortable', 'soft',
+        'durable', 'lightweight', 'premium', 'basic', 'trendy', 'classic', 'modern'
+    ]
+
+    category_mapping = {
+        'men-jeans': men_jeans_attributes,
+        'men-shirts': men_shirts_attributes,
+        'men-tshirts': men_tshirts_attributes
+    }
+
+    return category_mapping.get(category_name, general_attributes)
 
 
 # Helper function to get category data
@@ -1095,7 +1165,7 @@ with st.sidebar:
         sorting_group = st.selectbox(
             "Sort By:",
             sorting_options,
-            index=len(sorting_options) - 1  # Default to Overall Ranking
+            index=0  # Default to Overall Ranking
         )
 
         st.sidebar.write('---')
@@ -1106,21 +1176,24 @@ with st.sidebar:
         for product in all_products_in_category:
             unique_attributes.update(set([attr.lower() for attr in product.get("attribute_tokenset", [])]))
 
+        # Get category-specific common attributes
+        category_common_attributes = get_common_attributes_for_category(selected_category)
+
         st.markdown("### Filter by Attributes")
 
         # Attribute Selection Mode
         attribute_mode = st.selectbox(
             "Attribute Mode:",
-            ("All Available Attributes", "Enter Custom Attributes"),
-            index=1,
+            ("Common Attributes", "Enter Custom Attributes"),
+            index=0,
         )
 
         # Attribute Selection Logic
-        if attribute_mode == "All Available Attributes":
+        if attribute_mode == "Common Attributes":
             selected_attributes = st.multiselect(
                 "Select Attributes:",
-                sorted(list(unique_attributes)),
-                help="Select one or more attributes to filter products"
+                sorted(category_common_attributes),
+                help=f"Select one or more common attributes for {selected_category.replace('-', ' ').title()}"
             )
         else:
             custom_attributes_input = st.text_input(
@@ -1131,22 +1204,19 @@ with st.sidebar:
             selected_attributes = [attr.lower() for attr in
                                    custom_attributes_input.split()] if custom_attributes_input else []
 
-        st.sidebar.write('---')
+    st.sidebar.write('---')
 
-        # Add this after the attribute selection section in the sidebar
-        st.markdown("### Display Settings")
-        product_limit_percentage = st.slider(
-            "Products to Show:",
-            min_value=10,
-            max_value=100,
-            value=10,
-            step=10,
-            format="%d%%",
-            help="Adjust the percentage of products to display for better performance"
-        )
-
-        if custom_attributes_input:
-            product_limit_percentage = 100
+    # Add this after the attribute selection section in the sidebar
+    st.markdown("### Display Settings")
+    product_limit_percentage = st.slider(
+        "Products to Show:",
+        min_value=10,
+        max_value=100,
+        value=10,
+        step=10,
+        format="%d%%",
+        help="Adjust the percentage of products to display for better performance"
+    )
 
 
 # Function to Filter Products by Attributes (case-insensitive)
@@ -1299,7 +1369,7 @@ if page == "Trend Analysis":
         )
 
         fig.update_traces(texttemplate='%{text}', textposition='outside')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, config=config, use_container_width=True)
 
     # 1. PRICE OPPORTUNITY ANALYSIS - Fixed with safe numeric conversion
     st.markdown("### 💰 Price Opportunity Matrix")
@@ -1360,7 +1430,7 @@ if page == "Trend Analysis":
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)'
         )
-        st.plotly_chart(fig_price, use_container_width=True)
+        st.plotly_chart(fig_price, config=config, use_container_width=True)
 
         # Show actionable insights
         best_opportunity = price_analysis.loc[price_analysis['Opportunity_Index'].idxmax()]
@@ -1443,7 +1513,7 @@ if page == "Trend Analysis":
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)'
         )
-        st.plotly_chart(fig_attr, use_container_width=True)
+        st.plotly_chart(fig_attr, config=config, use_container_width=True)
 
         # Show top opportunities and trending attributes
         col1, col2 = st.columns(2)
@@ -1548,7 +1618,7 @@ if page == "Trend Analysis":
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)'
             )
-            st.plotly_chart(fig_gap, use_container_width=True)
+            st.plotly_chart(fig_gap, config=config, use_container_width=True)
 
             # Show top 3 opportunities with detailed insights
             st.markdown("#### 🎯 Top Market Opportunities")
