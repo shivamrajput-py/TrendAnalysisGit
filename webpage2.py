@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
+import html
 from collections import Counter
 import plotly.express as px
 import plotly.graph_objects as go
@@ -9,6 +10,12 @@ import networkx as nx
 import matplotlib.colors as mcolors
 from itertools import combinations
 from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
+from urllib.parse import quote_plus
+from urllib.request import urlopen
+from urllib.error import URLError, HTTPError
+import xml.etree.ElementTree as ET
 import numpy as np
 
 
@@ -758,22 +765,154 @@ def load_css():
 # Load CSS
 load_css()
 
-# LOAD JSON DATA
+ANALYSIS_FILE_PATTERNS = (
+    "_ImprovedTrendAnalysis_*.json",
+    "_TrendAnalysis_*.json",
+    "multi_category_trend_analysis_*.json",
+)
+DEFAULT_ANALYSIS_FILE = "_ImprovedTrendAnalysis_20250730_0211.json"
+
+
+def parse_analysis_timestamp(path: Path):
+    """Extract a sortable timestamp from generated analysis filenames."""
+    stem = path.stem
+    for fmt in ("%Y%m%d_%H%M", "%Y%m%d_%H", "%Y%m%d_%H%M%S"):
+        try:
+            timestamp_text = stem.rsplit("_", 2)[-2] + "_" + stem.rsplit("_", 1)[-1]
+            return datetime.strptime(timestamp_text, fmt)
+        except ValueError:
+            continue
+    return None
+
+
+def discover_analysis_files():
+    """Return likely analysis outputs, newest first, with the legacy default still supported."""
+    discovered_files = []
+    seen_files = set()
+
+    for pattern in ANALYSIS_FILE_PATTERNS:
+        for candidate in Path(".").glob(pattern):
+            if candidate.is_file() and candidate.name not in seen_files:
+                discovered_files.append(candidate)
+                seen_files.add(candidate.name)
+
+    default_path = Path(DEFAULT_ANALYSIS_FILE)
+    if default_path.exists() and default_path.name not in seen_files:
+        discovered_files.append(default_path)
+
+    return sorted(
+        discovered_files,
+        key=lambda item: (
+            parse_analysis_timestamp(item) or datetime.min,
+            datetime.fromtimestamp(item.stat().st_mtime),
+        ),
+        reverse=True,
+    )
+
+
+@st.cache_data(show_spinner=False)
+def load_analysis_payload(file_name):
+    """Cache JSON loading so the dashboard stays responsive across reruns."""
+    with open(file_name, "r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def load_latest_analysis_data():
+    """Pick the newest valid analysis file and keep a graceful fallback path."""
+    candidate_files = discover_analysis_files()
+    errors = []
+
+    for candidate in candidate_files:
+        try:
+            payload = load_analysis_payload(candidate.as_posix())
+            if isinstance(payload, dict) and "results" in payload:
+                return payload, candidate, candidate_files
+            errors.append(f"{candidate.name}: missing 'results' key")
+        except Exception as exc:
+            errors.append(f"{candidate.name}: {exc}")
+
+    raise FileNotFoundError(
+        "No valid analysis JSON was found. Checked files: "
+        + (", ".join(path.name for path in candidate_files) or "none")
+        + (f" | Errors: {'; '.join(errors)}" if errors else "")
+    )
+
+
+def format_analysis_timestamp(timestamp_text):
+    """Format ISO timestamps for human-readable status text."""
+    if not timestamp_text:
+        return "Unknown"
+    try:
+        return datetime.fromisoformat(str(timestamp_text)).strftime("%d %b %Y, %I:%M %p")
+    except ValueError:
+        return str(timestamp_text)
+
+
+def build_research_query(category_name):
+    """Create a sensible default query for live trend/news lookups."""
+    readable_category = category_name.replace("-", " ")
+    return f"{readable_category} fashion trends India"
+
+
+@st.cache_data(show_spinner=False, ttl=1800)
+def fetch_web_research(query, limit=5):
+    """
+    Pull recent fashion/trend coverage from Google News RSS.
+    The UI tolerates network failures and falls back to local analysis data.
+    """
+    search_query = (query or "").strip()
+    if not search_query:
+        return []
+
+    rss_url = (
+        "https://news.google.com/rss/search?q="
+        f"{quote_plus(search_query)}&hl=en-IN&gl=IN&ceid=IN:en"
+    )
+
+    try:
+        with urlopen(rss_url, timeout=8) as response:
+            payload = response.read()
+    except (URLError, HTTPError, TimeoutError, ValueError):
+        return []
+
+    try:
+        root = ET.fromstring(payload)
+    except ET.ParseError:
+        return []
+
+    articles = []
+    for item in root.findall("./channel/item"):
+        title = (item.findtext("title") or "").strip()
+        link = (item.findtext("link") or "").strip()
+        published = (item.findtext("pubDate") or "").strip()
+        source_node = item.find("source")
+        source = source_node.text.strip() if source_node is not None and source_node.text else "Google News"
+
+        if title and link:
+            articles.append(
+                {
+                    "title": title,
+                    "link": link,
+                    "published": published,
+                    "source": source,
+                }
+            )
+
+        if len(articles) >= limit:
+            break
+
+    return articles
+
+
 try:
-    with open('_ImprovedTrendAnalysis_20250730_0211.json', 'r', encoding='utf-8') as f:
-        data = json.load(f)
-except FileNotFoundError:
-    st.error(
-        "Data file not found. Please ensure 'enhanced_trend_analysis_multi_category.json' is in the correct directory.")
+    data, active_analysis_file, available_analysis_files = load_latest_analysis_data()
+except FileNotFoundError as exc:
+    st.error(str(exc))
     st.stop()
 
-# Extract available categories from the new format
-if "results" in data:
-    available_categories = list(data["results"].keys())
-    processing_summary = data.get("processing_summary", {})
-else:
-    st.error("Invalid data format. Please check the JSON file structure.")
-    st.stop()
+available_categories = sorted(data["results"].keys())
+processing_summary = data.get("processing_summary", {})
+active_analysis_label = format_analysis_timestamp(processing_summary.get("processing_date"))
 
 config = {
     'displayModeBar': True,
@@ -1139,12 +1278,33 @@ if 'product_id' in st.query_params and 'category' in st.query_params:
     st.stop()
 
 # MAIN APP CONTENT
+st.markdown(
+    f"""
+    <div style="padding: 1.2rem 1.4rem; border: 1px solid #243447; border-radius: 18px;
+                background: linear-gradient(135deg, rgba(17,24,39,0.95), rgba(16,40,74,0.92));
+                margin-bottom: 1.2rem;">
+        <div style="font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; color: #8ecdfc;">
+            Fashion Trend Intelligence
+        </div>
+        <h1 style="margin: 0.35rem 0 0.5rem 0; color: #f8fafc; font-size: 2rem;">Rawcult Trend Analysis Dashboard</h1>
+        <p style="margin: 0; color: #cbd5e1; max-width: 900px;">
+            Explore ranked fashion products, compare category signals, and review the freshest locally generated research file without hardcoding the dataset path.
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # PAGE SELECTION
 page = st.sidebar.pills("", ["Products", "Trend Analysis"], label_visibility='hidden', default='Products')
 
 # SIDEBAR CONFIGURATION
 with st.sidebar:
+    st.markdown("### Dataset Status")
+    st.caption(f"Loaded file: `{active_analysis_file.name}`")
+    st.caption(f"Last processed: {active_analysis_label}")
+    st.caption(f"Detected analysis files: {len(available_analysis_files)}")
+
     if page == "Products":
         st.sidebar.write('---')
         st.markdown("### Category Selection")
@@ -1204,6 +1364,12 @@ with st.sidebar:
             selected_attributes = [attr.lower() for attr in
                                    custom_attributes_input.split()] if custom_attributes_input else []
 
+        product_search_query = st.text_input(
+            "Search Products:",
+            placeholder="Search by title, brand, platform, or attribute",
+            help="Use this to quickly narrow the product list without changing the dataset."
+        ).strip()
+
     st.sidebar.write('---')
 
     # Add this after the attribute selection section in the sidebar
@@ -1218,6 +1384,9 @@ with st.sidebar:
         help="Adjust the percentage of products to display for better performance"
     )
 
+if page != "Products":
+    product_search_query = ""
+
 
 # Function to Filter Products by Attributes (case-insensitive)
 def filter_products_by_attributes(products, attributes):
@@ -1230,6 +1399,26 @@ def filter_products_by_attributes(products, attributes):
         if all(attr.lower() in product_attrs for attr in attributes):
             filtered_products.append(product)
     return pd.DataFrame(filtered_products)
+
+
+def filter_products_by_search(products_df, search_query):
+    """Filter products by a free-text query across key product fields."""
+    if products_df.empty or not search_query:
+        return products_df
+
+    query = search_query.lower()
+
+    def matches(row):
+        haystack = " ".join([
+            str(row.get("title", "")),
+            str(row.get("brand", "")),
+            str(row.get("platform", "")),
+            " ".join(row.get("attribute_tokenset", []) or []),
+        ]).lower()
+        return query in haystack
+
+    mask = products_df.apply(matches, axis=1)
+    return products_df[mask]
 
 
 # Helper function to safely convert to numeric values
@@ -1246,6 +1435,23 @@ def safe_numeric(value, default=0):
         return float(value)
     except (ValueError, TypeError, AttributeError):
         return default
+
+
+def safe_text(value, default="N/A"):
+    """Normalize nullable values before rendering them in cards."""
+    if value is None:
+        return default
+    text = str(value).strip()
+    if not text or text.lower() in {"nan", "none", "null"}:
+        return default
+    return text
+
+
+def safe_list(value):
+    """Always return a list so card rendering does not crash on missing attributes."""
+    if isinstance(value, list):
+        return value
+    return []
 # ENHANCED TREND ANALYSIS PAGE - MULTI-CATEGORY VERSION
 if page == "Trend Analysis":
     st.markdown("## 📊 Multi-Category Market Intelligence Dashboard")
@@ -1281,6 +1487,43 @@ if page == "Trend Analysis":
             st.metric("Total Products", processing_summary.get("total_products_across_categories", 0))
         with summary_col3:
             st.metric("Current Category", f"{trend_category.replace('-', ' ').title()}")
+
+    st.markdown("### Latest Web Research")
+    research_query = st.text_input(
+        "Search the web for recent category research",
+        value=build_research_query(trend_category),
+        key="research_query",
+        help="Fetches recent Google News RSS results. If live results are unavailable, the dashboard continues using the local analysis file."
+    )
+    research_articles = fetch_web_research(research_query, limit=6)
+
+    if research_articles:
+        research_columns = st.columns(2)
+        for index, article in enumerate(research_articles):
+            with research_columns[index % 2]:
+                st.markdown(
+                    f"""
+                    <div style="background:#111827; border:1px solid #233247; border-radius:14px; padding:1rem; margin-bottom:1rem;">
+                        <div style="font-size:0.8rem; color:#7dd3fc; margin-bottom:0.4rem;">
+                            {html.escape(article['source'])}
+                        </div>
+                        <div style="font-size:1rem; font-weight:600; color:#f8fafc; line-height:1.4; margin-bottom:0.6rem;">
+                            {html.escape(article['title'])}
+                        </div>
+                        <div style="font-size:0.78rem; color:#94a3b8; margin-bottom:0.7rem;">
+                            {html.escape(article['published']) if article['published'] else 'Recent coverage'}
+                        </div>
+                        <a href="{html.escape(article['link'])}" target="_blank" style="color:#4db8ff; text-decoration:none; font-weight:600;">
+                            Open article
+                        </a>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+    else:
+        st.info(
+            f"Live web research is unavailable right now, so the dashboard is using the latest local analysis file: {active_analysis_file.name}."
+        )
 
     # Quick Stats Overview for selected category
     st.markdown(f"### 📈 {trend_category.replace('-', ' ').title()} Market Overview")
@@ -1852,6 +2095,133 @@ def display_products(filtered_data, section_title, category_name, limit_percenta
         """, unsafe_allow_html=True)
 
 
+# Safer override for product rendering. Keeping it close to the call site makes
+# the final behavior explicit without rewriting the earlier UI sections.
+def display_products(filtered_data, section_title, category_name, limit_percentage=30):
+    """Render product cards safely even when some fields are missing in the dataset."""
+    if filtered_data.empty:
+        st.markdown("""
+        <div class="no-results">
+            <h3>No Products Found</h3>
+            <p>Try adjusting your filters or search criteria</p>
+        </div>
+        """, unsafe_allow_html=True)
+        return
+
+    total_products = len(filtered_data)
+    products_to_show = max(1, round(total_products * limit_percentage / 100))
+    limited_data = filtered_data.head(products_to_show)
+
+    st.markdown(f"""
+    <div class="section-header">
+        <h3 class="section-title">{section_title}</h3>
+        <span class="results-count">Showing {len(limited_data)} of {total_products} Results</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    for idx, (_, product) in enumerate(limited_data.iterrows(), 1):
+        attributes = safe_list(product.get("attribute_tokenset", []))
+        attr_display = " | ".join(attributes) if attributes else "No cleaned attributes available"
+        title = html.escape(safe_text(product.get("title")))
+        brand = html.escape(safe_text(product.get("brand")))
+        platform = html.escape(safe_text(product.get("platform")))
+        image_link = html.escape(safe_text(product.get("img_link"), "#"))
+        product_link = html.escape(safe_text(product.get("product_link"), "#"))
+        product_id = safe_text(product.get("product_id"))
+        rating_value = safe_text(product.get("rating_outof5"))
+        ratings_count = number_Str(safe_numeric(product.get("ratings_count")))
+        reviews_count = number_Str(safe_numeric(product.get("reviews_count")))
+        current_price = safe_numeric(product.get("current_price"))
+        original_price = safe_numeric(product.get("original_price"))
+        current_price_display = f"{current_price:,.0f}" if current_price > 0 else safe_text(product.get("current_price"))
+        original_price_display = f"{original_price:,.0f}" if original_price > 0 else safe_text(product.get("original_price"))
+        composite_score = round(safe_numeric(product.get("composite_score_norm")), 2)
+        sorting_rank_numeric = safe_numeric(product.get("sorting_rank"), 0)
+        sorting_rank = int(sorting_rank_numeric) if sorting_rank_numeric > 0 else "N/A"
+        sorting_name = html.escape(safe_text(product.get("sorting")))
+
+        reviews_html = ""
+        review_count = 0
+        for review_index in range(1, 4):
+            review = product.get(f"reviews_detail.{review_index}", "")
+            if review and str(review) != "nan" and str(review).strip():
+                trimmed_review = html.escape(str(review)[:120])
+                suffix = "..." if len(str(review)) > 120 else ""
+                reviews_html += f'<div class="review-item">- {trimmed_review}{suffix}</div>'
+                review_count += 1
+
+        reviews_section = (
+            f'<div class="reviews-section"><div class="reviews-title">RECENT REVIEWS</div>{reviews_html}</div>'
+            if review_count > 0
+            else '<div style="display: none;"></div>'
+        )
+
+        cat_ranks = []
+        for cat, rank in product.get("other_category_ranks", {}).items():
+            cat_ranks.append(f"<div class='rank-info'>#{int(rank)} in {html.escape(cat)}</div>")
+        cat_ranks_str = "".join(cat_ranks)
+        details_url = f"?product_id={product_id}&category={category_name}"
+
+        st.markdown(f"""
+        <div class="product-card">
+            <div class="product-content">
+                <div class="product-image-section">
+                    <div class="product-image-container">
+                        <img src="{image_link}" class="product-image" alt="{title}" />
+                    </div>
+                </div>
+                <div class="product-info">
+                    <div class="product-details">
+                        <div class="product-rank">#{idx}</div>
+                        <h3 class="product-title">{title}</h3>
+                        <div class="product-brand">
+                            <strong>{brand}</strong> | {platform}
+                        </div>
+                        <div class="rating-container">
+                            <div class="rating-badge">
+                                Rating {rating_value} ({ratings_count})
+                            </div>
+                            <div class="reviews-badge">
+                                {reviews_count} Reviews
+                            </div>
+                        </div>
+                        <div class="price-container">
+                            <span class="current-price">Rs. {current_price_display}</span>
+                            <span class="original-price">Rs. {original_price_display}</span>
+                        </div>
+                        <div class="score-badge">
+                            Score: {composite_score}
+                        </div>
+                        <div class="rank-info">
+                            Platform Rank: #{sorting_rank} in {sorting_name}
+                        </div>
+                        <div class="rank-info">
+                            Category: {category_name.replace('-', ' ').title()}
+                        </div>
+                        {cat_ranks_str}
+                    </div>
+                    <div class="product-attributes">
+                        <div class="attributes-title">Product Attributes ({len(attributes)})</div>
+                        <div class="attributes-list">{html.escape(attr_display)}</div>
+                        {reviews_section}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="btn-container">
+            <a href="{image_link}" target="_blank" class="btn btn-full">
+                View Image
+            </a>
+            <a href="{product_link}" target="_blank" class="btn btn-full">
+                View Product
+            </a>
+            <a href="{details_url}" class="btn btn-full">
+                Complete Details
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+
+
 # DISPLAY PRODUCTS BASED ON SORTING - UPDATED FOR MULTI-CATEGORY
 # Update both display_products calls to include the limit parameter
 if page == "Products":
@@ -1861,6 +2231,7 @@ if page == "Products":
         section_title = f"Best {selected_category.replace('-', ' ').title()} in {sorting_group}"
         group_data = category_info["category_rankings"][sorting_group]
         filtered_data = filter_products_by_attributes(group_data, selected_attributes)
+        filtered_data = filter_products_by_search(filtered_data, product_search_query)
         display_products(filtered_data, section_title, selected_category, product_limit_percentage)
     else:
         section_title = f"Overall Best {selected_category.replace('-', ' ').title()}"
@@ -1868,6 +2239,7 @@ if page == "Products":
             category_info["overall_ranking"].to_dict(orient="records"),
             selected_attributes
         )
+        filtered_data = filter_products_by_search(filtered_data, product_search_query)
         display_products(filtered_data, section_title, selected_category, product_limit_percentage)
 
 # FOOTER

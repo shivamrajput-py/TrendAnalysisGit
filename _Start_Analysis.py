@@ -5,6 +5,7 @@ import numpy as np
 from collections import Counter
 import os
 from datetime import datetime
+from pathlib import Path
 
 # Enhanced stopwords - removing generic/non-descriptive terms
 ENGLISH_STOPWORDS = {
@@ -304,6 +305,14 @@ def enhanced_median_imputation(df):
         if col not in df.columns:
             df[col] = np.nan
 
+    # Normalise scoring columns before any aggregation so string values from
+    # scraper outputs do not poison the ranking math.
+    numeric_columns = ['rating_outof5', 'ratings_count', 'reviews_count', 'sorting_rank', 'current_price', 'original_price']
+    for col in numeric_columns:
+        if col not in df.columns:
+            df[col] = np.nan
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+
     # Group by platform and sorting for more accurate imputation
     def smart_fill(group_cols, value_col, default_val):
         if not df[group_cols].empty:
@@ -569,6 +578,17 @@ def load_category_data(files, category):
     return category_data
 
 
+def discover_input_files():
+    """
+    Prefer curated/finalized `prodData_*F.json` files, then fall back to raw
+    scraper outputs so the analysis pipeline stays usable as the repo evolves.
+    """
+    all_files = sorted(Path(".").glob("prodData_*.json"))
+    preferred_files = [path for path in all_files if path.stem.endswith("F")]
+
+    return [path.as_posix() for path in (preferred_files or all_files)]
+
+
 def print_global_attributes_summary():
     """Print a summary of all unique attributes across all categories"""
     print("\n" + "=" * 80)
@@ -626,23 +646,7 @@ def print_global_attributes_summary():
 # -------- Main Processing Pipeline --------
 
 def main():
-    files = [
-        'prodData_AjioF.json',
-        'prodData_AmazonF.json',
-        'prodData_BewakoofF.json',
-        'prodData_BeyoungF.json',
-        'prodData_BombaySCF.json',
-        'prodData_BonkersF.json',
-        'prodData_CampusutraF.json',
-        'prodData_FlipkartF.json',
-        'prodData_FlipkartspoylF.json',
-        'prodData_MyntraF.json',
-        'prodData_MyntrafwdF.json',
-        'prodData_PronkF.json',
-        'prodData_SlikkF.json',
-        'prodData_SouledstoreF.json',
-        'prodData_TatacliqF.json',
-    ]
+    files = discover_input_files()
 
     # Clear global counter at start
     global GLOBAL_ATTRIBUTE_COUNTER
