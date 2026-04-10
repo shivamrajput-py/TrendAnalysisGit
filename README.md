@@ -248,22 +248,6 @@ Composite scoring emphasizes:
 
 This is intended to avoid over-rewarding items that are merely visible while still accounting for marketplace traction.
 
-## Key Improvements Included In This Version
-
-The codebase has been improved to make the repo safer and easier to present publicly:
-
-- removed the duplicate dashboard file
-- removed the empty stylesheet file
-- removed the hardcoded dependency on one analysis filename in the Streamlit app
-- added automatic latest-analysis discovery with graceful fallback
-- added cached JSON loading
-- added safe field handling in product rendering to reduce UI crashes from partial data
-- added product search in the dashboard
-- added a lightweight live web-research panel in the dashboard
-- improved numeric coercion in the analysis pipeline before scoring
-- made the analysis pipeline auto-discover dataset inputs
-- expanded documentation for GitHub presentation
-
 ## Running The Project
 
 ### 1. Create a virtual environment
@@ -321,21 +305,6 @@ Important note:
 - scraper execution is platform-dependent and marketplace HTML changes can break selectors over time
 - this repo already contains datasets, so the dashboard can run without scraping first
 - `chromedriver.exe` and a compatible Chrome version are required for local scraping
-
-## What Makes This Project Strong For Recruiters
-
-This is not just a dashboard and not just a scraper. It demonstrates:
-
-- multi-source data collection
-- automation with Selenium
-- unstructured text cleanup
-- ranking-system design
-- applied analytics
-- dashboard product thinking
-- resilience improvements for real-world datasets
-- end-to-end ownership from raw data to presentation layer
-
-It shows the ability to build a practical analytics product rather than a disconnected notebook.
 
 ## Limitations
 
